@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paper Bag Cost Calculator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+  :root {
+    --bg:#f5f4f0;--surface:#fff;--surface2:#f0efe9;
+    --border:rgba(0,0,0,0.10);--border-med:rgba(0,0,0,0.18);
+    --text:#1a1916;--text-sec:#6b6a65;--text-hint:#9e9d97;
+    --accent:#2c5f2e;--accent-light:#e8f0e8;--accent-text:#1d3f1e;
+    --danger:#b83232;--danger-light:#fdf0f0;
+    --warning:#8a6000;
+    --sidebar-w:220px;--radius:10px;--radius-sm:6px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;font-size:13.5px;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+
+  .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--surface);border-right:0.5px solid var(--border-med);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100}
+  .sidebar-logo{padding:20px 18px 16px;border-bottom:0.5px solid var(--border)}
+  .sidebar-logo .brand{font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.04em;text-transform:uppercase}
+  .sidebar-logo .sub{font-size:11px;color:var(--text-hint);margin-top:2px}
+  .sidebar-nav{padding:12px 10px;flex:1}
+  .nav-section-label{font-size:10px;font-weight:600;color:var(--text-hint);letter-spacing:.08em;text-transform:uppercase;padding:6px 8px 4px}
+  .nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;color:var(--text-sec);font-size:13px;font-weight:400;transition:background .12s,color .12s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left;font-family:'DM Sans',sans-serif}
+  .nav-item:hover{background:var(--surface2);color:var(--text)}
+  .nav-item.active{background:var(--accent-light);color:var(--accent-text);font-weight:500}
+  .nav-icon{width:16px;height:16px;flex-shrink:0;opacity:.7}
+  .nav-item.active .nav-icon{opacity:1}
+  .sidebar-footer{padding:14px 18px;border-top:0.5px solid var(--border);font-size:11px;color:var(--text-hint)}
+
+  .main{margin-left:var(--sidebar-w);flex:1;min-height:100vh;display:flex;flex-direction:column}
+  .topbar{background:var(--surface);border-bottom:0.5px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+  .topbar-title{font-size:15px;font-weight:500}
+  .topbar-actions{display:flex;gap:8px}
+  .content{padding:24px 28px;max-width:1020px}
+
+  .panel{display:none}.panel.active{display:block}
+
+  .card{background:var(--surface);border:0.5px solid var(--border-med);border-radius:var(--radius);padding:18px 20px;margin-bottom:14px}
+  .section-label{font-size:10.5px;font-weight:600;color:var(--text-hint);letter-spacing:.07em;text-transform:uppercase;margin-bottom:14px}
+
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .g5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+  .g6{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:11.5px;color:var(--text-sec);font-weight:500}
+  .field input,.field select{font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 9px;border:0.5px solid var(--border-med);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);width:100%;height:32px;outline:none;transition:border-color .12s}
+  .field input:focus,.field select:focus{border-color:var(--accent)}
+  .field input[readonly]{background:var(--surface2);color:var(--text-sec)}
+  .field input.invalid{border-color:var(--danger)!important}
+  .field .hint{font-size:10.5px;color:var(--warning);margin-top:2px}
+  .field .err{font-size:10.5px;color:var(--danger);margin-top:2px;display:none}
+  .field input.invalid~.hint~.err,.field input.invalid~.err{display:block}
+  .req{color:var(--danger);margin-left:1px}
+
+  .btn{font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:var(--radius-sm);cursor:pointer;border:0.5px solid var(--border-med);background:var(--surface);color:var(--text);transition:background .12s;display:inline-flex;align-items:center;gap:6px}
+  .btn:hover{background:var(--surface2)}
+  .btn-accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn-accent:hover{background:var(--accent-text);border-color:var(--accent-text)}
+  .btn-danger{color:var(--danger);border-color:rgba(184,50,50,.3)}
+  .btn-danger:hover{background:var(--danger-light)}
+
+  .sku-card{background:var(--surface);border:0.5px solid var(--border-med);border-radius:var(--radius);padding:18px 20px;margin-bottom:12px}
+  .sku-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .sku-label{font-size:11px;font-weight:600;color:var(--text-hint);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+  .sku-type-select{font-family:'DM Sans',sans-serif;font-size:13px;padding:5px 9px;border:0.5px solid var(--border-med);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);height:30px;min-width:200px;outline:none;cursor:pointer}
+  .sku-type-select:focus{border-color:var(--accent)}
+
+  .handle-wrap{display:flex;flex-direction:column;gap:4px}
+  .handle-wrap .hl{font-size:11.5px;color:var(--text-sec);font-weight:500}
+  .handle-box{height:32px;border:0.5px solid var(--border-med);border-radius:var(--radius-sm);display:flex;align-items:center;padding:0 9px;gap:7px;cursor:pointer;background:var(--surface);font-size:13px;color:var(--text)}
+  .handle-box input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--accent)}
+
+  .divider{height:0.5px;background:var(--border);margin:14px 0}
+
+  .breakup-table{width:100%;border-collapse:collapse;font-size:13px}
+  .breakup-table td{padding:5px 0;border-bottom:0.5px solid var(--border)}
+  .breakup-table td:last-child{text-align:right;font-family:'DM Mono',monospace;font-size:12.5px}
+  .breakup-table tr:last-child td{border-bottom:none}
+  .breakup-total{background:var(--accent-light);border-radius:var(--radius-sm);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:10px;border:0.5px solid rgba(44,95,46,.2)}
+  .selling-price{font-size:18px;font-weight:600;color:var(--accent-text);font-family:'DM Mono',monospace}
+
+  .placeholder-note{font-size:13px;color:var(--text-hint);padding:2rem;border:0.5px dashed var(--border-med);border-radius:var(--radius-sm);text-align:center;background:var(--surface2)}
+
+  .admin-tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .admin-tbl th{font-size:11px;font-weight:600;color:var(--text-hint);padding:6px 8px;border-bottom:0.5px solid var(--border-med);text-align:left;text-transform:uppercase;letter-spacing:.05em}
+  .admin-tbl td{padding:5px 8px;border-bottom:0.5px solid var(--border);vertical-align:middle}
+  .admin-tbl input{font-family:'DM Sans',sans-serif;width:72px;font-size:12.5px;padding:4px 7px;border:0.5px solid var(--border-med);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);outline:none}
+  .admin-tbl input:focus{border-color:var(--accent)}
+
+  .saved-card{background:var(--surface);border:0.5px solid var(--border-med);border-radius:var(--radius);padding:16px 20px;margin-bottom:12px}
+  .badge{display:inline-flex;align-items:center;font-size:10.5px;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--text-sec);border:0.5px solid var(--border-med);font-weight:500}
+
+  .flex-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .flex-space{display:flex;align-items:center;justify-content:space-between}
+  .mb-sm{margin-bottom:10px}
+  .mb-md{margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">CostCalc</div>
+    <div class="sub">Paper Packaging</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Workspace</div>
+    <button class="nav-item active" onclick="showPanel('calc')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8h6M5 11h4M5 5h6"/></svg>
+      Calculator
+    </button>
+    <button class="nav-item" onclick="showPanel('saved')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4a1 1 0 011-1h8a1 1 0 011 1v9l-2-1.5L9 13l-2-1.5L5 13V4"/></svg>
+      Saved Quotes
+    </button>
+    <div class="nav-section-label" style="margin-top:10px">Configuration</div>
+    <button class="nav-item" onclick="showPanel('admin')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
+      Admin — Rates
+    </button>
+  </nav>
+  <div class="sidebar-footer">v1.0 · Paper Packaging</div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <span class="topbar-title" id="topbarTitle">Calculator</span>
+    <div class="topbar-actions" id="topbarActions">
+      <button class="btn" onclick="addSKU()">+ Add SKU</button>
+      <button class="btn" onclick="saveQuote()">Save Quote</button>
+      <button class="btn" onclick="exportCSV()">Export CSV</button>
+      <button class="btn btn-accent" onclick="exportToSheets()" id="sheetsBtn">↗ Export To Sheets</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div id="panel-calc" class="panel active">
+      <div class="card">
+        <div class="section-label">Client Details</div>
+        <div class="g3" style="max-width:72%">
+          <div class="field"><label>Client Name</label><input type="text" id="clientName" placeholder="Acme Packaging Co." class="tc-field"></div>
+          <div class="field"><label>Quote Ref</label><input type="text" id="quoteRef" placeholder="Q-2026-001" class="tc-field"></div>
+          <div class="field"><label>Date</label><input type="date" id="quoteDate"></div>
+        </div>
+        <div style="margin-top:12px;max-width:170px">
+          <div class="field"><label>Margin %</label><input type="number" id="globalMargin" value="8" min="0" max="100" oninput="recalcAll()"></div>
+        </div>
+      </div>
+      <div id="skuContainer"></div>
+    </div>
+
+    <div id="panel-admin" class="panel">
+
+      <!-- Paper matrices -->
+      <div class="g2">
+        <div class="card">
+          <div class="section-label">Paper Bags (Auto) &amp; Wrapping Paper — Paper Price Matrix (₹/kg)</div>
+          <div style="overflow-x:auto">
+            <table class="admin-tbl" id="paperMatrix">
+              <thead><tr><th>Paper Type</th><th>32 GSM</th><th>40 GSM</th><th>60 GSM</th><th>80 GSM</th><th>100 GSM</th><th>120 GSM</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-label">Paper Bag Manual — Paper Price Matrix (₹/kg)</div>
+          <div style="overflow-x:auto">
+            <table class="admin-tbl" id="pbmPaperMatrix">
+              <thead><tr><th>Paper Type</th><th>100</th><th>120</th><th>150</th><th>190</th><th>210</th><th>230</th><th>250</th><th>270</th><th>300</th><th>350</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-label">Folding Box — Paper Price Matrix (₹/kg)</div>
+          <div style="overflow-x:auto">
+            <table class="admin-tbl" id="fbPaperMatrix">
+              <thead><tr><th>Paper Type</th><th>100</th><th>120</th><th>130</th><th>150</th><th>190</th><th>210</th><th>230</th><th>250</th><th>270</th><th>300</th><th>350</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Per-type rate cards -->
+      <div class="g3">
+
+        <!-- Paper Bags Automatic -->
+        <div class="card">
+          <div class="section-label" style="color:var(--accent-text)">Paper Bags (Automatic)</div>
+          <table class="admin-tbl">
+            <tbody>
+              <tr><td>Printing — 1 Color (₹/1000g)</td><td><input type="number" id="pr1" value="10" step="0.1"></td></tr>
+              <tr><td>Printing — 2 Color (₹/1000g)</td><td><input type="number" id="pr2" value="15" step="0.1"></td></tr>
+              <tr><td>Printing — 3 Color (₹/1000g)</td><td><input type="number" id="pr3" value="20" step="0.1"></td></tr>
+              <tr><td>Printing — 4 Color (₹/1000g)</td><td><input type="number" id="pr4" value="25" step="0.1"></td></tr>
+              <tr><td>Plate Rate Multiplier</td><td><input type="number" id="plateRate" value="1.3" step="0.1"></td></tr>
+              <tr><td>Fixed Cost Min (₹/Pc)</td><td><input type="number" id="fixedMin" value="0.4" step="0.01"></td></tr>
+              <tr><td>Fixed Cost Max (₹/Pc)</td><td><input type="number" id="fixedMax" value="0.8" step="0.01"></td></tr>
+              <tr><td>Fixed Rate GSM ≤60</td><td><input type="number" id="fixedR60" value="30"></td></tr>
+              <tr><td>Fixed Rate GSM ≤80</td><td><input type="number" id="fixedR80" value="25"></td></tr>
+              <tr><td>Fixed Rate GSM &gt;80</td><td><input type="number" id="fixedR81" value="20"></td></tr>
+              <tr><td>Packing Cost (₹/Pc)</td><td><input type="number" id="packingCost" value="0.06" step="0.01"></td></tr>
+              <tr><td>Handle Cost (₹/Pc)</td><td><input type="number" id="handleCost" value="1.3" step="0.1"></td></tr>
+              <tr><td>Transport NCR (₹/1000g)</td><td><input type="number" id="transNCR" value="3.5" step="0.1"></td></tr>
+              <tr><td>Transport Non-NCR (₹/1000g)</td><td><input type="number" id="transNonNCR" value="10" step="0.1"></td></tr>
+              <tr><td>Wastage %</td><td><input type="number" id="wastage" value="5" step="0.1"></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Wrapping Paper -->
+        <div class="card">
+          <div class="section-label" style="color:var(--accent-text)">Wrapping Paper</div>
+          <table class="admin-tbl">
+            <tbody>
+              <tr><td>Printing — 1 Color (₹/1000g)</td><td><input type="number" id="wpPr1" value="20" step="0.1"></td></tr>
+              <tr><td>Printing — 2 Color (₹/1000g)</td><td><input type="number" id="wpPr2" value="30" step="0.1"></td></tr>
+              <tr><td>Printing — 3 Color (₹/1000g)</td><td><input type="number" id="wpPr3" value="40" step="0.1"></td></tr>
+              <tr><td>Printing — 4 Color (₹/1000g)</td><td><input type="number" id="wpPr4" value="40" step="0.1"></td></tr>
+              <tr><td>Plate Rate Multiplier</td><td><input type="number" id="wpPlateRate" value="1.3" step="0.1"></td></tr>
+              <tr><td>Conversion Cost (₹/kg)</td><td><input type="number" id="wpConvRate" value="20" step="1"></td></tr>
+              <tr><td>Packing Cost (₹/Pc)</td><td><input type="number" id="wpPackingCost" value="0.02" step="0.01"></td></tr>
+              <tr><td>Transport NCR (₹/1000g)</td><td><input type="number" id="wpTransNCR" value="3.5" step="0.1"></td></tr>
+              <tr><td>Transport Non-NCR (₹/1000g)</td><td><input type="number" id="wpTransNonNCR" value="10" step="0.1"></td></tr>
+              <tr><td>Wastage %</td><td><input type="number" id="wpWastage" value="5" step="0.1"></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Paper Bag Manual -->
+        <div class="card">
+          <div class="section-label" style="color:var(--accent-text)">Paper Bag Manual</div>
+          <table class="admin-tbl">
+            <tbody>
+              <tr><td>Plate Cost Rate (₹ per colour)</td><td><input type="number" id="pbmPlateRate" value="600" step="1"></td></tr>
+              <tr><td>Gloss Lamination (paise/sq.inch)</td><td><input type="number" id="glossLaminRate" value="7" step="0.1"></td></tr>
+              <tr><td>Matt Lamination (paise/sq.inch)</td><td><input type="number" id="mattLaminRate" value="7" step="0.1"></td></tr>
+              <tr><td>Thermal Lamination (paise/sq.inch)</td><td><input type="number" id="thermalLaminRate" value="7" step="0.1"></td></tr>
+              <tr><td>Varnish Rate (paise/sq.inch)</td><td><input type="number" id="varnishRate" value="7" step="0.1"></td></tr>
+              <tr><td>Die Cutting Rate (₹/Cut)</td><td><input type="number" id="dieCutRate" value="0.6" step="0.01"></td></tr>
+              <tr><td>Pasting Rate (₹/Pc)</td><td><input type="number" id="pastingRate" value="0.3" step="0.01"></td></tr>
+              <tr><td>Foil Cost (₹/Pc)</td><td><input type="number" id="pbmFoilRate" value="1.0" step="0.01"></td></tr>
+              <tr><td>UV Cost (₹/Pc)</td><td><input type="number" id="pbmUVRate" value="0.5" step="0.01"></td></tr>
+              <tr><td>Embossing Cost (₹/Pc)</td><td><input type="number" id="pbmEmbossingRate" value="0.5" step="0.01"></td></tr>
+              <tr><td>Fixed / Conversion Cost (₹/Pc)</td><td><input type="number" id="pbmFixedCost" value="2.50" step="0.01"></td></tr>
+              <tr><td>Handle Cost (₹/Pc)</td><td><input type="number" id="pbmHandleCost" value="1.3" step="0.1"></td></tr>
+              <tr><td>Packing Cost (₹/Pc)</td><td><input type="number" id="pbmPackingCost" value="0.18" step="0.01"></td></tr>
+              <tr><td>Transport (₹/1000g)</td><td><input type="number" id="pbmTransport" value="10" step="0.1"></td></tr>
+              <tr><td>Wastage %</td><td><input type="number" id="pbmWastage" value="5" step="0.1"></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Folding Box -->
+        <div class="card">
+          <div class="section-label" style="color:var(--accent-text)">Folding Box</div>
+          <table class="admin-tbl">
+            <tbody>
+              <tr><td>Printing — 1 Color</td><td><input type="number" id="fbPr1" value="0.8" step="0.1"></td></tr>
+              <tr><td>Printing — 2 Color</td><td><input type="number" id="fbPr2" value="0.8" step="0.1"></td></tr>
+              <tr><td>Printing — 4 Color</td><td><input type="number" id="fbPr4" value="1.0" step="0.1"></td></tr>
+              <tr><td>Plate Cost Rate (₹ per colour)</td><td><input type="number" id="fbPlateRate" value="600" step="1"></td></tr>
+              <tr><td>Gloss Lamination (paise/sq.inch)</td><td><input type="number" id="fbGlossLaminRate" value="7" step="0.1"></td></tr>
+              <tr><td>Matt Lamination (paise/sq.inch)</td><td><input type="number" id="fbMattLaminRate" value="7" step="0.1"></td></tr>
+              <tr><td>Thermal Lamination (paise/sq.inch)</td><td><input type="number" id="fbThermalLaminRate" value="7" step="0.1"></td></tr>
+              <tr><td>Varnish Rate (paise/sq.inch)</td><td><input type="number" id="fbVarnishRate" value="7" step="0.1"></td></tr>
+              <tr><td>Die Cutting Rate (₹/Cut)</td><td><input type="number" id="fbDieCutRate" value="0.4" step="0.01"></td></tr>
+              <tr><td>Pasting Rate (₹/Pc)</td><td><input type="number" id="fbPastingRate" value="0.3" step="0.01"></td></tr>
+              <tr><td>Foil Cost (₹/Pc)</td><td><input type="number" id="fbFoilRate" value="1.0" step="0.01"></td></tr>
+              <tr><td>UV Cost (₹/Pc)</td><td><input type="number" id="fbUVRate" value="2" step="0.01"></td></tr>
+              <tr><td>Embossing Cost (₹/Pc)</td><td><input type="number" id="fbEmbossingRate" value="0.5" step="0.01"></td></tr>
+              <tr><td>Fixed / Conversion Cost (₹/Pc)</td><td><input type="number" id="fbFixedCost" value="0.20" step="0.01"></td></tr>
+              <tr><td>Packing Rate (₹/kg)</td><td><input type="number" id="fbPackingKg" value="2" step="0.1"></td></tr>
+              <tr><td>Packing Min Flat (₹/Pc)</td><td><input type="number" id="fbPackingFlat" value="0.12" step="0.01"></td></tr>
+              <tr><td>Transport NCR Rate (₹/kg)</td><td><input type="number" id="fbTransNCRKg" value="3.5" step="0.1"></td></tr>
+              <tr><td>Transport NCR Min (₹/Pc)</td><td><input type="number" id="fbTransNCRMin" value="0.09" step="0.01"></td></tr>
+              <tr><td>Transport Non-NCR Rate (₹/kg)</td><td><input type="number" id="fbTransNonNCRKg" value="10" step="0.1"></td></tr>
+              <tr><td>Transport Non-NCR Min (₹/Pc)</td><td><input type="number" id="fbTransNonNCRMin" value="0.40" step="0.01"></td></tr>
+              <tr><td>Wastage %</td><td><input type="number" id="fbWastage" value="4" step="0.1"></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+      <button class="btn btn-accent" onclick="applyAdmin()">Apply & Recalculate</button>
+
+      <div class="card" style="margin-top:14px">
+        <div class="section-label">Google Sheets Integration</div>
+        <p style="font-size:12px;color:var(--text-sec);margin-bottom:10px">Paste your Google Apps Script Web App URL below. Each SKU type will be sent to a separate tab in your Google Sheet.</p>
+        <div style="display:flex;gap:10px;align-items:flex-end">
+          <div class="field" style="flex:1">
+            <label>Apps Script Web App URL</label>
+            <input type="text" id="sheetsWebAppUrl" placeholder="https://script.google.com/macros/s/..." style="font-size:12px">
+          </div>
+          <button class="btn" onclick="testSheetsConnection()" style="white-space:nowrap;height:32px">Test Connection</button>
+        </div>
+        <p style="font-size:11px;color:var(--text-hint);margin-top:8px">How to set up: In your Google Sheet → Extensions → Apps Script → paste GoogleAppsScript_CostCalc.js → Deploy → New deployment → Web App → Execute as Me → Anyone → Copy URL</p>
+      </div>
+    </div>
+
+    <div id="panel-saved" class="panel">
+      <div id="savedContainer"><p style="color:var(--text-hint);font-size:13px">No saved quotes yet.</p></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const PAPER_TYPES=['MG Kraft','MF Kraft','Bleached Kraft','Imported Kraft','OGR'];
+const GSM_COLS=[32,40,60,80,100,120];
+const DEFAULT_PAPER={'MG Kraft':[60,60,54,50,46,44],'MF Kraft':[60,60,54,50,46,44],'Bleached Kraft':[90,90,78,78,78,78],'Imported Kraft':[90,90,72,72,72,72],'OGR':[134,130,130,130,130,130]};
+const PBM_PAPER_TYPES=['Kraft','Bleached Kraft','Kraft Top Liner','SBS'];
+const PBM_GSM_COLS=[100,120,150,190,210,230,250,270,300,350];
+const DEFAULT_PBM_PAPER={
+  'Kraft':[55,50,48,46,44,42,40,38,36,34],
+  'Bleached Kraft':[70,65,60,56,54,52,50,48,46,44],
+  'Kraft Top Liner':[90,90,90,78,78,78,78,75,75,72],
+  'SBS':[90,90,90,78,78,78,78,75,75,72]
+};
+const FB_PAPER_TYPES=['Artpaper','Artcard','Gumming Sheet','Kraft','SBS'];
+const FB_GSM_COLS=[100,120,130,150,190,210,230,250,270,300,350];
+const DEFAULT_FB_PAPER={
+  'Artpaper':[90,90,88,85,80,78,76,74,72,70,68],
+  'Artcard':[90,90,88,85,80,78,76,74,72,70,68],
+  'Gumming Sheet':[85,85,83,80,76,74,72,70,68,66,64],
+  'Kraft':[55,50,50,48,46,44,42,40,38,36,34],
+  'SBS':[90,90,90,90,78,78,78,78,75,75,72]
+};
+const SKU_TYPES=['Paper Bags (Automatic)','Wrapping Paper','Paper Bag Manual','Folding Box'];
+const MAX_UPS=6,MAX_REEL_INCH=42;
+let paperRates={},pbmPaperRates={},fbPaperRates={},skus=[],skuId=0,savedQuotes=[];
+
+function toTitleCase(str){return str.replace(/\S+/g,w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase());}
+function applyTitleCase(el){el.addEventListener('blur',function(){if(this.value.trim())this.value=toTitleCase(this.value);});}
+function initRates(){
+  PAPER_TYPES.forEach(t=>{paperRates[t]={};GSM_COLS.forEach((g,i)=>{paperRates[t][g]=DEFAULT_PAPER[t][i]});});
+  PBM_PAPER_TYPES.forEach(t=>{pbmPaperRates[t]={};PBM_GSM_COLS.forEach((g,i)=>{pbmPaperRates[t][g]=DEFAULT_PBM_PAPER[t][i]});});
+  FB_PAPER_TYPES.forEach(t=>{fbPaperRates[t]={};FB_GSM_COLS.forEach((g,i)=>{fbPaperRates[t][g]=DEFAULT_FB_PAPER[t][i]});});
+}
+
+function buildPaperMatrix(){
+  const tbody=document.querySelector('#paperMatrix tbody');tbody.innerHTML='';
+  PAPER_TYPES.forEach(t=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="font-size:12px;color:var(--text-sec);white-space:nowrap">${t}</td>`+
+      GSM_COLS.map(g=>`<td><input type="number" data-pt="${t}" data-gsm="${g}" value="${paperRates[t][g]}"></td>`).join('');
+    tbody.appendChild(tr);
+  });
+}
+
+function buildPBMPaperMatrix(){
+  const tbody=document.querySelector('#pbmPaperMatrix tbody');tbody.innerHTML='';
+  PBM_PAPER_TYPES.forEach(t=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="font-size:12px;color:var(--text-sec);white-space:nowrap">${t}</td>`+
+      PBM_GSM_COLS.map(g=>`<td><input type="number" data-pbmpt="${t}" data-pbmgsm="${g}" value="${pbmPaperRates[t][g]}"></td>`).join('');
+    tbody.appendChild(tr);
+  });
+}
+
+function buildFBPaperMatrix(){
+  const tbody=document.querySelector('#fbPaperMatrix tbody');tbody.innerHTML='';
+  FB_PAPER_TYPES.forEach(t=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="font-size:12px;color:var(--text-sec);white-space:nowrap">${t}</td>`+
+      FB_GSM_COLS.map(g=>`<td><input type="number" data-fbpt="${t}" data-fbgsm="${g}" value="${fbPaperRates[t][g]}"></td>`).join('');
+    tbody.appendChild(tr);
+  });
+}
+
+function applyAdmin(){
+  document.querySelectorAll('#paperMatrix input').forEach(el=>{paperRates[el.dataset.pt][parseInt(el.dataset.gsm)]=parseFloat(el.value)||0;});
+  document.querySelectorAll('#pbmPaperMatrix input').forEach(el=>{pbmPaperRates[el.dataset.pbmpt][parseInt(el.dataset.pbmgsm)]=parseFloat(el.value)||0;});
+  document.querySelectorAll('#fbPaperMatrix input').forEach(el=>{fbPaperRates[el.dataset.fbpt][parseInt(el.dataset.fbgsm)]=parseFloat(el.value)||0;});
+  recalcAll();alert('Rates applied and recalculated.');
+}
+
+function getRate(f){const el=document.getElementById(f);return el?parseFloat(el.value)||0:0;}
+function closestGSM(g){let best=GSM_COLS[0],bd=Infinity;GSM_COLS.forEach(c=>{const d=Math.abs(c-g);if(d<bd||(d===bd&&c<best)){bd=d;best=c;}});return best;}
+function closestPBMGSM(g){let best=PBM_GSM_COLS[0],bd=Infinity;PBM_GSM_COLS.forEach(c=>{const d=Math.abs(c-g);if(d<bd||(d===bd&&c<best)){bd=d;best=c;}});return best;}
+function closestFBGSM(g){let best=FB_GSM_COLS[0],bd=Infinity;FB_GSM_COLS.forEach(c=>{const d=Math.abs(c-g);if(d<bd||(d===bd&&c<best)){bd=d;best=c;}});return best;}
+function toInch(v,u){if(u==='cm')return v/2.54;if(u==='mm')return v/25.4;return v;}
+function calcUps(w){if(!w||w<=0)return{ups:0,reelWInch:0};const ups=Math.min(MAX_UPS,Math.floor(MAX_REEL_INCH/w));return{ups,reelWInch:w*ups};}
+
+function calcPaperBag(s){
+  const u=s.uom||'mm';
+  const W=toInch(parseFloat(s.bagW)||0,u),G=toInch(parseFloat(s.bagG)||0,u),H=toInch(parseFloat(s.bagH)||0,u);
+  const gsm=parseFloat(s.gsm)||0,qty=parseFloat(s.qty)||1,margin=parseFloat(document.getElementById('globalMargin').value)||0;
+  const swIn=W+G+W+G+1,slIn=H+G/2+1,swCm=swIn*2.54,slCm=slIn*2.54;
+  const bagWt=swIn*slIn*gsm/1550,cG=closestGSM(gsm);
+  const pr=paperRates[s.paperType||PAPER_TYPES[0]]||{};
+  const paperCost=(pr[cG]||0)*bagWt/1000;
+  const pc=s.printing==='No'?0:parseInt(s.printing)||0;
+  const prs=[0,getRate('pr1'),getRate('pr2'),getRate('pr3'),getRate('pr4')];
+  const printCost=(prs[pc]||0)*bagWt/1000;
+  const plateCost=qty>0?swCm*slCm*getRate('plateRate')*pc/qty:0;
+  const wc=(paperCost+printCost+plateCost)*getRate('wastage')/100;
+  const fr=gsm<=60?getRate('fixedR60'):gsm<=80?getRate('fixedR80'):getRate('fixedR81');
+  const fixedCost=Math.max(getRate('fixedMin'),Math.min(getRate('fixedMax'),fr*bagWt/1000));
+  const handleCost=s.handle?getRate('handleCost'):0;
+  const packingCost=getRate('packingCost');
+  const transCost=(s.delivery==='NCR'?getRate('transNCR'):getRate('transNonNCR'))*bagWt/1000;
+  const sub=paperCost+printCost+plateCost+wc+fixedCost+handleCost+packingCost+transCost;
+  const mAmt=sub*margin/100;
+  return{swCm,slCm,bagWt,closestG:cG,gsm,paperCost,printCost,plateCost,wastageCost:wc,fixedCost,handleCost,packingCost,transCost,marginAmt:mAmt,sellingPrice:sub+mAmt,gsmMismatch:cG!==gsm};
+}
+
+function calcWrappingPaper(s){
+  const u=s.uom||'mm';
+  const sheetWIn=toInch(parseFloat(s.bagW)||0,u),sheetHIn=toInch(parseFloat(s.bagH)||0,u);
+  const gsm=parseFloat(s.gsm)||0,qty=parseFloat(s.qty)||1,margin=parseFloat(document.getElementById('globalMargin').value)||0;
+  const {ups,reelWInch}=calcUps(sheetWIn);
+  const reelWCm=reelWInch*2.54,cutLenCm=sheetHIn*2.54;
+  const bagWt=sheetWIn*sheetHIn*gsm/1550,cG=closestGSM(gsm);
+  const pr=paperRates[s.paperType||PAPER_TYPES[0]]||{};
+  const paperCost=(pr[cG]||0)*bagWt/1000;
+  const pc=s.printing==='No'?0:parseInt(s.printing)||0;
+  const prs=[0,getRate('wpPr1'),getRate('wpPr2'),getRate('wpPr3'),getRate('wpPr4')];
+  const printCost=(prs[pc]||0)*bagWt/1000;
+  const plateCost=qty>0?reelWCm*cutLenCm*getRate('wpPlateRate')*pc/qty:0;
+  const wc=(paperCost+printCost+plateCost)*getRate('wpWastage')/100;
+  const fixedCost=getRate('wpConvRate')*bagWt/1000;
+  const packingCost=getRate('wpPackingCost');
+  const transCost=(s.delivery==='NCR'?getRate('wpTransNCR'):getRate('wpTransNonNCR'))*bagWt/1000;
+  const sub=paperCost+printCost+plateCost+wc+fixedCost+packingCost+transCost;
+  const mAmt=sub*margin/100;
+  return{reelWCm,cutLenCm,bagWt,ups,closestG:cG,gsm,paperCost,printCost,plateCost,wastageCost:wc,fixedCost,packingCost,transCost,marginAmt:mAmt,sellingPrice:sub+mAmt,gsmMismatch:cG!==gsm};
+}
+
+function calcPaperBagManual(s){
+  const u=s.uom||'mm';
+  const W=toInch(parseFloat(s.bagW)||0,u),G=toInch(parseFloat(s.bagG)||0,u),H=toInch(parseFloat(s.bagH)||0,u);
+  const gsm=parseFloat(s.gsm)||0;
+  const margin=parseFloat(document.getElementById('globalMargin').value)||0;
+  const qty=parseFloat(s.qty)||1;
+  /* Sheet dimensions — add 1" to H if top fold required */
+  const swIn=W+G+W+G+1;
+  const topFoldExtra=s.topFold==='Required'?1:0;
+  const slIn=H+(G/2)+1+topFoldExtra;
+  /* Auto # of ups — same logic as Folding Box (max 29.5×39.75, try all 4 combos) */
+  const maxW=29.5,maxL=39.75;
+  const combos=[
+    {sw:maxW,sl:maxL,wOnW:true},{sw:maxW,sl:maxL,wOnW:false},
+    {sw:maxL,sl:maxW,wOnW:true},{sw:maxL,sl:maxW,wOnW:false},
+  ];
+  let bestUps={totalUps:0};
+  combos.forEach(c=>{
+    const dimW=c.wOnW?swIn:slIn;
+    const dimL=c.wOnW?slIn:swIn;
+    const uw=Math.floor(c.sw/dimW)||0;
+    const ul=Math.floor(c.sl/dimL)||0;
+    const tot=uw*ul;
+    if(tot>bestUps.totalUps) bestUps={totalUps:tot,upsW:uw,upsL:ul,wOnW:c.wOnW};
+  });
+  const totalUps=bestUps.totalUps||1;
+  const upsW=bestUps.upsW||0,upsL=bestUps.upsL||0;
+  const upsOrientation=(bestUps.wOnW?'W×L':'L×W');
+  const pcsPerSheet=totalUps;
+  const bagWt=swIn*slIn*gsm/1550/pcsPerSheet;
+  const cG=closestPBMGSM(gsm);
+  const paperPrice=parseFloat(s.paperPrice)||(pbmPaperRates[s.paperType]?pbmPaperRates[s.paperType][cG]||0:0);
+  const paperCost=paperPrice*bagWt/1000;
+  const printColors=s.printing==='No'?0:parseInt(s.printing)||0;
+  const printCost=printColors>0?1/pcsPerSheet:0;
+  const plateCost=printColors>0?printColors*getRate('pbmPlateRate')/qty:0;
+  let laminRate=0;
+  if(s.lamination==='Gloss Lamination')laminRate=getRate('glossLaminRate');
+  else if(s.lamination==='Matt Lamination')laminRate=getRate('mattLaminRate');
+  else if(s.lamination==='Thermal Lamination')laminRate=getRate('thermalLaminRate');
+  const laminCost=laminRate>0&&pcsPerSheet>0?swIn*slIn/(laminRate*pcsPerSheet*100):0;
+  const varnishCost=s.varnish==='Yes'&&pcsPerSheet>0?swIn*slIn/(getRate('varnishRate')*pcsPerSheet*100):0;
+  const dieCutCost=s.dieCutting==='Yes'?getRate('dieCutRate')/pcsPerSheet:0;
+  const wastageCost=(paperCost+printCost+plateCost+laminCost+varnishCost+dieCutCost)*getRate('pbmWastage')/100;
+  const pastingCost=s.pasting==='Yes'?getRate('pastingRate'):0;
+  const foilCost=s.foil&&s.foil!=='No'?getRate('pbmFoilRate'):0;
+  const uvCost=s.uv&&s.uv!=='No'?getRate('pbmUVRate'):0;
+  const embossingCost=s.embossing==='Yes'?getRate('pbmEmbossingRate'):0;
+  const fixedCost=getRate('pbmFixedCost');
+  const handleCost=s.handle==='Yes'?getRate('pbmHandleCost'):0;
+  const packingCost=getRate('pbmPackingCost');
+  const transCost=getRate('pbmTransport')*bagWt/1000;
+  const sub=paperCost+printCost+plateCost+laminCost+varnishCost+dieCutCost+wastageCost+foilCost+uvCost+embossingCost+fixedCost+handleCost+packingCost+transCost;
+  const mAmt=sub*margin/100;
+  return{swIn,slIn,bagWt,cG,gsm,totalUps,upsW,upsL,upsOrientation,topFoldExtra,
+    paperCost,printCost,plateCost,laminCost,varnishCost,dieCutCost,wastageCost,foilCost,uvCost,embossingCost,fixedCost,handleCost,packingCost,transCost,marginAmt:mAmt,sellingPrice:sub+mAmt};
+}
+
+function fbValid(s){return parseFloat(s.boxW)>0&&parseFloat(s.boxL)>0&&parseFloat(s.gsm)>0&&parseFloat(s.qty)>0;}
+
+function calcFoldingBox(s){
+  const u=s.uom||'inch';
+  const boxWIn=toInch(parseFloat(s.boxW)||0,u);
+  const boxLIn=toInch(parseFloat(s.boxL)||0,u);
+  const gsm=parseFloat(s.gsm)||0;
+  const qty=parseFloat(s.qty)||1;
+  const margin=parseFloat(document.getElementById('globalMargin').value)||0;
+  const maxW=29.5;
+  const maxL=39.75;
+
+  let sheetWIn,sheetLIn,upsW,upsL,totalUps,orientation;
+  const grainApplicable=s.grainDirection==='Applicable';
+
+  /* Always compute grain-constrained result first (Box W on W axis, both sheet orientations) */
+  const uwGA=Math.floor(maxW/boxWIn)||0;
+  const ulGA=Math.floor(maxL/boxLIn)||0;
+  const totGA=uwGA*ulGA;
+  const uwGB=Math.floor(maxL/boxWIn)||0;
+  const ulGB=Math.floor(maxW/boxLIn)||0;
+  const totGB=uwGB*ulGB;
+  let grainUpsW,grainUpsL,grainTotalUps,grainSheetW,grainSheetL,grainOrientation;
+  if(totGA>=totGB){
+    grainUpsW=uwGA;grainUpsL=ulGA;grainTotalUps=totGA;
+    grainSheetW=boxWIn*uwGA;grainSheetL=boxLIn*ulGA;grainOrientation='W×L (29.5×39.75)';
+  } else {
+    grainUpsW=uwGB;grainUpsL=ulGB;grainTotalUps=totGB;
+    grainSheetW=boxWIn*uwGB;grainSheetL=boxLIn*ulGB;grainOrientation='W×L (39.75×29.5)';
+  }
+
+  if(grainApplicable){
+    /* Use grain-constrained result */
+    upsW=grainUpsW;upsL=grainUpsL;totalUps=grainTotalUps;
+    sheetWIn=grainSheetW;sheetLIn=grainSheetL;
+    orientation=grainOrientation.replace('W×L','W×L (grain)');
+  } else {
+    /* Try all 4 free combinations — only override grain result if strictly MORE ups */
+    const combos=[
+      {sw:maxW,sl:maxL,wOnW:true},
+      {sw:maxW,sl:maxL,wOnW:false},
+      {sw:maxL,sl:maxW,wOnW:true},
+      {sw:maxL,sl:maxW,wOnW:false},
+    ];
+    let best={totalUps:grainTotalUps,upsW:grainUpsW,upsL:grainUpsL,
+      sheetWIn:grainSheetW,sheetLIn:grainSheetL,wOnW:true,isGrain:true};
+    combos.forEach(c=>{
+      const dimW=c.wOnW?boxWIn:boxLIn;
+      const dimL=c.wOnW?boxLIn:boxWIn;
+      const uw=Math.floor(c.sw/dimW)||0;
+      const ul=Math.floor(c.sl/dimL)||0;
+      const tot=uw*ul;
+      /* Only override on strictly greater ups — tie keeps grain-constrained layout */
+      if(tot>best.totalUps) best={totalUps:tot,upsW:uw,upsL:ul,sheetWIn:dimW*uw,sheetLIn:dimL*ul,wOnW:c.wOnW,isGrain:false};
+    });
+    upsW=best.upsW;upsL=best.upsL;totalUps=best.totalUps;
+    sheetWIn=best.sheetWIn;sheetLIn=best.sheetLIn;
+    orientation=best.isGrain?grainOrientation:(best.wOnW?'W×L':'L×W');
+  }
+  const pcsPerSheet=totalUps||1;
+
+  /* Bag weight per pc */
+  const cG=closestFBGSM(gsm);
+  const paperPrice=parseFloat(s.paperPrice)||(fbPaperRates[s.paperType]?fbPaperRates[s.paperType][cG]||0:0);
+  const bagWt=sheetWIn*sheetLIn*gsm/1550/pcsPerSheet;
+  const paperCost=paperPrice*bagWt/1000;
+
+  /* Printing: rate/pcsPerSheet */
+  const fbPrintRates={'No':0,'1 Color':getRate('fbPr1'),'2 Color':getRate('fbPr2'),'4 Color':getRate('fbPr4')};
+  const printColors=s.printing==='No'?0:parseInt(s.printing)||0;
+  const printCost=printColors>0?(fbPrintRates[s.printing]||0)/pcsPerSheet:0;
+  /* Printing Plate Cost = colours × fbPlateRate / qty */
+  const plateCost=printColors>0?printColors*getRate('fbPlateRate')/qty:0;
+
+  /* Lamination cost = (SheetW × SheetL) ÷ (rate × totalUps × 100)  [rate in paise/sq inch] */
+  let laminRate=0;
+  if(s.lamination==='Gloss Lamination')laminRate=getRate('fbGlossLaminRate');
+  else if(s.lamination==='Matt Lamination')laminRate=getRate('fbMattLaminRate');
+  else if(s.lamination==='Thermal Lamination')laminRate=getRate('fbThermalLaminRate');
+  const laminCost=laminRate>0&&pcsPerSheet>0?sheetWIn*sheetLIn/(laminRate*pcsPerSheet*100):0;
+
+  /* Varnish cost = (SheetW × SheetL) ÷ (rate × totalUps × 100)  [rate in paise/sq inch] */
+  const varnishCost=s.varnish==='Yes'&&pcsPerSheet>0?sheetWIn*sheetLIn/(getRate('fbVarnishRate')*pcsPerSheet*100):0;
+
+  /* Die Cutting = rate / pcsPerSheet */
+  const dieCutCost=s.dieCutting==='Yes'?getRate('fbDieCutRate')/pcsPerSheet:0;
+
+  /* Wastage */
+  const wastageCost=(paperCost+printCost+plateCost+laminCost+varnishCost+dieCutCost)*getRate('fbWastage')/100;
+
+  /* Pasting */
+  const pastingCost=s.pasting==='Yes'?getRate('fbPastingRate'):0;
+
+  /* Foil */
+  const foilCost=s.foil&&s.foil!=='No'?getRate('fbFoilRate'):0;
+
+  /* UV */
+  const uvCost=s.uv&&s.uv!=='No'?getRate('fbUVRate'):0;
+
+  /* Embossing */
+  const embossingCost=s.embossing==='Yes'?getRate('fbEmbossingRate'):0;
+
+  /* Fixed */
+  const fixedCost=getRate('fbFixedCost');
+
+  /* Packing = MIN(fbPackingKg × bagWt/1000, fbPackingFlat) */
+  const packingCost=Math.min(getRate('fbPackingKg')*bagWt/1000, getRate('fbPackingFlat'));
+
+  /* Transport NCR = MAX(fbTransNCRKg × bagWt/1000, fbTransNCRMin)
+     Transport Non-NCR = MAX(fbTransNonNCRKg × bagWt/1000, fbTransNonNCRMin) */
+  const transCost=s.delivery==='NCR'
+    ?Math.max(getRate('fbTransNCRKg')*bagWt/1000, getRate('fbTransNCRMin'))
+    :Math.max(getRate('fbTransNonNCRKg')*bagWt/1000, getRate('fbTransNonNCRMin'));
+
+  const sub=paperCost+printCost+plateCost+laminCost+varnishCost+dieCutCost+wastageCost+pastingCost+foilCost+uvCost+embossingCost+fixedCost+packingCost+transCost;
+  const mAmt=sub*margin/100;
+  return{sheetWIn,sheetLIn,upsW,upsL,totalUps,pcsPerSheet,bagWt,cG,gsm,orientation,
+    paperCost,printCost,plateCost,laminCost,varnishCost,dieCutCost,wastageCost,pastingCost,foilCost,uvCost,embossingCost,fixedCost,packingCost,transCost,
+    marginAmt:mAmt,sellingPrice:sub+mAmt};
+}
+
+function pbValid(s){return parseFloat(s.bagW)>0&&parseFloat(s.bagG)>0&&parseFloat(s.bagH)>0&&parseFloat(s.gsm)>0&&parseFloat(s.qty)>0;}
+function wpValid(s){return parseFloat(s.bagW)>0&&parseFloat(s.bagH)>0&&parseFloat(s.gsm)>0&&parseFloat(s.qty)>0;}
+function pbmValid(s){return parseFloat(s.bagW)>0&&parseFloat(s.bagG)>0&&parseFloat(s.bagH)>0&&parseFloat(s.gsm)>0&&parseFloat(s.qty)>0;}
+
+function renderSKUCard(s){
+  const el=document.getElementById('sku-'+s.id);if(!el)return;
+  if(s.skuType==='Paper Bags (Automatic)')renderPaperBag(s,el);
+  else if(s.skuType==='Wrapping Paper')renderWrappingPaper(s,el);
+  else if(s.skuType==='Paper Bag Manual')renderPaperBagManual(s,el);
+  else if(s.skuType==='Folding Box')renderFoldingBox(s,el);
+}
+
+function renderPaperBag(s,el){
+  const valid=pbValid(s);
+  ['bagW','bagG','bagH','gsm','qty'].forEach(f=>{const inp=el.querySelector(`[data-field="${f}"]`);if(inp)inp.classList.toggle('invalid',!(parseFloat(s[f])>0));});
+  if(!valid){
+    el.querySelector('.reel-w-val').value='—';el.querySelector('.cut-len-val').value='—';
+    el.querySelector('.bw-val').value='—';el.querySelector('.hint-gsm').textContent='';
+    el.querySelector('.breakup-body').innerHTML='';el.querySelector('.selling-price').textContent='—';
+    return;
+  }
+  const r=calcPaperBag(s),fmt=v=>'₹'+v.toFixed(2);
+  el.querySelector('.reel-w-val').value=r.swCm.toFixed(3)+' cm';
+  el.querySelector('.cut-len-val').value=r.slCm.toFixed(3)+' cm';
+  el.querySelector('.bw-val').value=r.bagWt.toFixed(4)+' gms';
+  el.querySelector('.hint-gsm').textContent=r.gsmMismatch?'Using closest GSM: '+r.closestG:'';
+  el.querySelector('.breakup-body').innerHTML=[
+    ['Paper Cost',fmt(r.paperCost)],['Printing Cost',fmt(r.printCost)],
+    ['Printing Plate Cost',fmt(r.plateCost)],['Wastage',fmt(r.wastageCost)],
+    ['Fixed / Conversion Cost',fmt(r.fixedCost)],['Handle Cost',fmt(r.handleCost)],
+    ['Packing Cost',fmt(r.packingCost)],['Transportation Cost',fmt(r.transCost)],
+    ['Margin',fmt(r.marginAmt)]
+  ].map(([l,v])=>`<tr><td style="color:var(--text-sec)">${l}</td><td>${v}</td></tr>`).join('');
+  el.querySelector('.selling-price').textContent='₹'+r.sellingPrice.toFixed(2);
+}
+
+function renderWrappingPaper(s,el){
+  const valid=wpValid(s);
+  ['bagW','bagH','gsm','qty'].forEach(f=>{const inp=el.querySelector(`[data-field="${f}"]`);if(inp)inp.classList.toggle('invalid',!(parseFloat(s[f])>0));});
+  if(!valid){
+    el.querySelector('.reel-w-val').value='—';el.querySelector('.cut-len-val').value='—';
+    el.querySelector('.bw-val').value='—';el.querySelector('.ups-val').value='—';
+    el.querySelector('.hint-gsm').textContent='';
+    el.querySelector('.breakup-body').innerHTML='';el.querySelector('.selling-price').textContent='—';
+    return;
+  }
+  const r=calcWrappingPaper(s),fmt=v=>'₹'+v.toFixed(2);
+  el.querySelector('.reel-w-val').value=r.reelWCm.toFixed(3)+' cm';
+  el.querySelector('.cut-len-val').value=r.cutLenCm.toFixed(3)+' cm';
+  el.querySelector('.bw-val').value=r.bagWt.toFixed(4)+' gms';
+  el.querySelector('.ups-val').value=r.ups;
+  el.querySelector('.hint-gsm').textContent=r.gsmMismatch?'Using closest GSM: '+r.closestG:'';
+  el.querySelector('.breakup-body').innerHTML=[
+    ['Paper Cost',fmt(r.paperCost)],['Printing Cost',fmt(r.printCost)],
+    ['Printing Plate Cost',fmt(r.plateCost)],['Wastage',fmt(r.wastageCost)],
+    ['Conversion Cost',fmt(r.fixedCost)],
+    ['Packing Cost',fmt(r.packingCost)],['Transportation Cost',fmt(r.transCost)],
+    ['Margin',fmt(r.marginAmt)]
+  ].map(([l,v])=>`<tr><td style="color:var(--text-sec)">${l}</td><td>${v}</td></tr>`).join('');
+  el.querySelector('.selling-price').textContent='₹'+r.sellingPrice.toFixed(2);
+}
+
+function renderPaperBagManual(s,el){
+  const valid=pbmValid(s);
+  ['bagW','bagG','bagH','gsm','qty'].forEach(f=>{const inp=el.querySelector(`[data-field="${f}"]`);if(inp)inp.classList.toggle('invalid',!(parseFloat(s[f])>0));});
+  if(!valid){
+    const sw=el.querySelector('.sw-in-val');if(sw)sw.value='—';
+    const sl=el.querySelector('.sl-in-val');if(sl)sl.value='—';
+    const pu=el.querySelector('.pbm-ups-val');if(pu)pu.value='—';
+    const pt=el.querySelector('.pbm-total-ups-val');if(pt)pt.value='—';
+    const bw=el.querySelector('.bw-val');if(bw)bw.value='—';
+    el.querySelector('.hint-gsm').textContent='';
+    el.querySelector('.breakup-body').innerHTML='';el.querySelector('.selling-price').textContent='—';
+    return;
+  }
+  const r=calcPaperBagManual(s),fmt=v=>'₹'+v.toFixed(2);
+  const swEl=el.querySelector('.sw-in-val');if(swEl)swEl.value=r.swIn.toFixed(3)+' inch';
+  const slEl=el.querySelector('.sl-in-val');if(slEl)slEl.value=r.slIn.toFixed(3)+(r.topFoldExtra?' (+1" top fold)':'')+' inch';
+  const puEl=el.querySelector('.pbm-ups-val');if(puEl)puEl.value=r.upsW+' × '+r.upsL+' ('+r.upsOrientation+')';
+  const ptEl=el.querySelector('.pbm-total-ups-val');if(ptEl)ptEl.value=r.totalUps;
+  const bwEl=el.querySelector('.bw-val');if(bwEl)bwEl.value=r.bagWt.toFixed(4)+' gms';
+  const hintEl=el.querySelector('.hint-gsm');if(hintEl)hintEl.textContent=r.cG!==parseFloat(s.gsm)?'Using closest GSM: '+r.cG:'';
+  const laminLabel=s.lamination&&s.lamination!=='No'?s.lamination+' Cost':'Lamination Cost';
+  const foilLabel=s.foil&&s.foil!=='No'?s.foil+' Foil Cost':'Foil Cost';
+  const uvLabel=s.uv&&s.uv!=='No'?s.uv+' UV Cost':'UV Cost';
+  el.querySelector('.breakup-body').innerHTML=[
+    ['Paper Cost',fmt(r.paperCost)],['Printing Cost',fmt(r.printCost)],
+    ['Printing Plate Cost',fmt(r.plateCost)],
+    [laminLabel,fmt(r.laminCost)],['Varnish Cost',fmt(r.varnishCost)],
+    ['Die Cutting Cost',fmt(r.dieCutCost)],['Wastage',fmt(r.wastageCost)],
+    [foilLabel,fmt(r.foilCost)],[uvLabel,fmt(r.uvCost)],['Embossing Cost',fmt(r.embossingCost)],
+    ['Fixed / Conversion Cost',fmt(r.fixedCost)],
+    ['Handle Cost',fmt(r.handleCost)],['Packing Cost',fmt(r.packingCost)],
+    ['Transportation Cost',fmt(r.transCost)],['Margin',fmt(r.marginAmt)]
+  ].map(([l,v])=>`<tr><td style="color:var(--text-sec)">${l}</td><td>${v}</td></tr>`).join('');
+  el.querySelector('.selling-price').textContent='₹'+r.sellingPrice.toFixed(2);
+}
+
+function buildSKUHTML(s){
+  const typeOpts=SKU_TYPES.map(t=>`<option${t===s.skuType?' selected':''}>${t}</option>`).join('');
+  return`<div class="sku-header">
+    <span class="sku-label">SKU</span>
+    <select class="sku-type-select" onchange="changeSKUType(${s.id},this.value)">${typeOpts}</select>
+    <button class="btn btn-danger" onclick="deleteSKU(${s.id})">Remove</button>
+  </div><div class="sku-body"></div>`;
+}
+
+function buildPaperBagHTML(s){
+  const ptOpts=PAPER_TYPES.map(t=>`<option${t===s.paperType?' selected':''}>${t}</option>`).join('');
+  const printOpts=['No','1 Color','2 Color','3 Color','4 Color'].map(p=>`<option${p===s.printing?' selected':''}>${p}</option>`).join('');
+  const delOpts=['NCR','Non NCR'].map(d=>`<option${d===s.delivery?' selected':''}>${d}</option>`).join('');
+  const uomOpts=['mm','cm','inch'].map(u=>`<option${u===s.uom?' selected':''}>${u}</option>`).join('');
+  const u=s.uom||'mm';
+  return`
+  <div class="g3 mb-md">
+    <div class="field"><label>Item Name</label><input type="text" data-field="itemDesc" value="${s.itemDesc||''}" placeholder="E.g. Grocery Tote" class="tc-field"></div>
+    <div class="field"><label>Paper Type</label><select data-field="paperType">${ptOpts}</select></div>
+    <div class="field"><label>Printing</label><select data-field="printing">${printOpts}</select></div>
+  </div>
+  <div class="g6 mb-md">
+    <div class="field"><label>UOM</label><select data-field="uom" onchange="setUOM(${s.id},this.value)">${uomOpts}</select></div>
+    <div class="field"><label>Bag W (${u})<span class="req">*</span></label><input type="number" data-field="bagW" value="${s.bagW||''}" min="0" placeholder="Required"><span class="err">Required</span></div>
+    <div class="field"><label>Bag G (${u})<span class="req">*</span></label><input type="number" data-field="bagG" value="${s.bagG||''}" min="0" placeholder="Required"><span class="err">Required</span></div>
+    <div class="field"><label>Bag H (${u})<span class="req">*</span></label><input type="number" data-field="bagH" value="${s.bagH||''}" min="0" placeholder="Required"><span class="err">Required</span></div>
+    <div class="field"><label>GSM<span class="req">*</span></label><input type="number" data-field="gsm" value="${s.gsm||''}" min="0" placeholder="Required"><span class="hint hint-gsm"></span><span class="err">Required</span></div>
+    <div class="field"><label>Delivery</label><select data-field="delivery">${delOpts}</select></div>
+  </div>
+  <div class="g4 mb-md">
+    <div class="field"><label>Quantity<span class="req">*</span></label><input type="number" data-field="qty" value="${s.qty||''}" min="1" placeholder="Required"><span class="err">Required</span></div>
+    <div class="handle-wrap"><span class="hl">Handle</span><label class="handle-box"><input type="checkbox" data-field="handle"${s.handle?' checked':''}><span>Include Handle</span></label></div>
+    <div class="field"><label>Reel W (cm)</label><input type="text" readonly class="reel-w-val" value="—"></div>
+    <div class="field"><label>Cutting Length (cm)</label><input type="text" readonly class="cut-len-val" value="—"></div>
+  </div>
+  <div style="max-width:24%;margin-bottom:14px">
+    <div class="field"><label>Bag Weight / Pc (gms)</label><input type="text" readonly class="bw-val" value="—"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="section-label" style="margin-top:12px">Cost Breakup Per Piece</div>
+  <table class="breakup-table"><tbody class="breakup-body"></tbody></table>
+  <div class="breakup-total">
+    <span style="font-size:13px;color:var(--text-sec)">Selling Price / Pc</span>
+    <span class="selling-price">—</span>
+  </div>`;
+}
+
+function buildWrappingPaperHTML(s){
+  const ptOpts=PAPER_TYPES.map(t=>`<option${t===s.paperType?' selected':''}>${t}</option>`).join('');
+  const printOpts=['No','1 Color','2 Color','3 Color','4 Color'].map(p=>`<option${p===s.printing?' selected':''}>${p}</option>`).join('');
+  const delOpts=['NCR','Non NCR'].map(d=>`<option${d===s.delivery?' selected':''}>${d}</option>`).join('');
+  const uomOpts=['mm','cm','inch'].map(u=>`<option${u===s.uom?' selected':''}>${u}</option>`).join('');
+  const u=s.uom||'mm';
+  return`
+  <div class="g3 mb-md">
+    <div class="field"><label>Item Name</label><input type="text" data-field="itemDesc" value="${s.itemDesc||''}" placeholder="E.g. Gift Wrap" class="tc-field"></div>
+    <div class="field"><label>Paper Type</label><select data-field="paperType">${ptOpts}</select></div>
+    <div class="field"><label>Printing</label><select data-field="printing">${printOpts}</select></div>
+  </div>
+  <div class="g5 mb-md">
+    <div class="field"><label>UOM</label><select data-field="uom" onchange="setUOM(${s.id},this.value)">${uomOpts}</select></div>
+    <div class="field"><label class="dim-label">Sheet W (${u})<span class="req">*</span></label><input type="number" data-field="bagW" value="${s.bagW||''}" min="0" placeholder="Required"><span class="err">Required</span></div>
+    <div class="field"><label class="dim-label">Sheet H (${u})<span class="req">*</span></label><input type="number" data-field="bagH" value="${s.bagH||''}" min="0" placeholder="Required"><span class="err">Required</span></div>
+    <div class="field"><label>GSM<span class="req">*</span></label><input type="number" data-field="gsm" value="${s.gsm||''}" min="0" placeholder="Required"><span class="hint hint-gsm"></span><span class="err">Required</span></div>
+    <div class="field"><label>Delivery</label><select data-field="delivery">${delOpts}</select></div>
+  </div>
+  <div class="g5 mb-md">
+    <div class="field"><label>Quantity<span class="req">*</span></label><input type="number" data-field="qty" value="${s.qty||''}" min="1" placeholder="Required"><span class="err">Required</span></div>
+    <div class="field"><label># Of Ups (Auto)</label><input type="text" readonly class="ups-val" value="—"></div>
+    <div class="field"><label>Reel W (cm)</label><input type="text" readonly class="reel-w-val" value="—"></div>
+    <div class="field"><label>Cutting Length (cm)</label><input type="text" readonly class="cut-len-val" value="—"></div>
+    <div class="field"><label>Sheet Weight / Pc (gms)</label><input type="text" readonly class="bw-val" value="—"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="section-label" style="margin-top:12px">Cost Breakup Per Piece</div>
+  <table class="breakup-table"><tbody class="breakup-body"></tbody></table>
+  <div class="breakup-total">
+    <span style="font-size:13px;color:var(--text-sec)">Selling Price / Pc</span>
+    <span class="selling-price">—</span>
+  </div>`;
+}
+
+function buildPaperBagManualHTML(s){
+  const ptOpts=PBM_PAPER_TYPES.map(t=>`<option${t===(s.paperType||PBM_PAPER_TYPES[0])?' selected':''}>${t}</option>`).join('');
+  const gsmOpts=PBM_GSM_COLS.map(g=>`<option${String(g)===String(s.gsm)?' selected':''}>${g}</option>`).join('');
+  const printOpts=['No','1 Color','2 Color','4 Color'].map(p=>`<option${p===s.printing?' selected':''}>${p}</option>`).join('');
+  const delOpts=['NCR','Non NCR'].map(d=>`<option${d===s.delivery?' selected':''}>${d}</option>`).join('');
+  const uomOpts=['mm','cm','inch'].map(u=>`<option${u===s.uom?' selected':''}>${u}</option>`).join('');
+  const laminOpts=['No','Gloss Lamination','Matt Lamination','Thermal Lamination'].map(o=>`<option${o===(s.lamination||'No')?' selected':''}>${o}</option>`).join('');
+  const ynOpts=v=>['Yes','No'].map(o=>`<option${o===v?' selected':''}>${o}</option>`).join('');
+  const foilOpts=['No','Gold','Silver'].map(o=>`<option${o===(s.foil||'No')?' selected':''}>${o}</option>`).join('');
+  const uvOpts=['No','Hybrid','Spot','Full'].map(o=>`<option${o===(s.uv||'No')?' selected':''}>${o}</option>`).join('');
+  const topFoldOpts=['Not Required','Required'].map(o=>`<option${o===(s.topFold||'Required')?' selected':''}>${o}</option>`).join('');
+  const u=s.uom||'mm';
+  return`
+  <div class="g3 mb-md">
+    <div class="field"><label>Item Name</label><input type="text" data-field="itemDesc" value="${s.itemDesc||''}" placeholder="E.g. Brown Carry Bag" class="tc-field"></div>
+    <div class="field"><label>Paper Type</label><select data-field="paperType">${ptOpts}</select></div>
+    <div class="field"><label>Printing</label><select data-field="printing">${printOpts}</select></div>
+  </div>
+  <div class="g4 mb-md">
+    <div class="field"><label>Lamination</label><select data-field="lamination">${laminOpts}</select></div>
+    <div class="field"><label>Varnish</label><select data-field="varnish">${ynOpts(s.varnish||'No')}</select></div>
+    <div class="field"><label>Die Cutting</label><select data-field="dieCutting">${ynOpts(s.dieCutting||'Yes')}</select></div>
+  </div>
+  <div class="g4 mb-md">
+    <div class="field"><label>Foil</label><select data-field="foil">${foilOpts}</select></div>
+    <div class="field"><label>UV</label><select data-field="uv">${uvOpts}</select></div>
+    <div class="field"><label>Embossing</label><select data-field="embossing">${ynOpts(s.embossing||'No')}</select></div>
+    <div class="field"><label>Handle</label><select data-field="handle">${ynOpts(s.handle||'Yes')}</select></div>
+  </div>
+  <div class="g4 mb-md">
+    <div class="field"><label>Top Fold</label><select data-field="topFold">${topFoldOpts}</select></div>
+    <div class="field"><label>Delivery</label><select data-field="delivery">${delOpts}</select></div>
+    <div class="field"><label>Quantity<span class="req">*</span></label><input type="number" data-field="qty" value="${s.qty||''}" min="1" placeholder="Required"><span class="err">Required</span></div>
+  </div>
+  <div class="g6 mb-md">
+    <div class="field"><label>UOM</label><select data-field="uom" onchange="setUOM(${s.id},this.value)">${uomOpts}</select></div>
+    <div class="field"><label class="pbm-w-lbl">Bag W (${u})<span class="req">*</span></label><input type="number" data-field="bagW" value="${s.bagW||''}" min="0" placeholder="Required"><span class="err">Required</span></div>
+    <div class="field"><label class="pbm-g-lbl">Bag G (${u})<span class="req">*</span></label><input type="number" data-field="bagG" value="${s.bagG||''}" min="0" placeholder="Required"><span class="err">Required</span></div>
+    <div class="field"><label class="pbm-h-lbl">Bag H (${u})<span class="req">*</span></label><input type="number" data-field="bagH" value="${s.bagH||''}" min="0" placeholder="Required"><span class="err">Required</span></div>
+    <div class="field"><label>GSM<span class="req">*</span></label><input type="number" data-field="gsm" value="${s.gsm||''}" min="0" placeholder="e.g. 170"><span class="hint hint-gsm"></span><span class="err">Required</span></div>
+    <div class="field"><label>Paper Price (₹/kg)</label><input type="number" data-field="paperPrice" value="${s.paperPrice||''}" min="0" placeholder="Auto from rates"></div>
+  </div>
+  <div class="g5 mb-md">
+    <div class="field"><label>Sheet W (inch)</label><input type="text" readonly class="sw-in-val" value="—"></div>
+    <div class="field"><label>Sheet L (inch)</label><input type="text" readonly class="sl-in-val" value="—"></div>
+    <div class="field"><label>Ups (orientation)</label><input type="text" readonly class="pbm-ups-val" value="—"></div>
+    <div class="field"><label>Total # Ups</label><input type="text" readonly class="pbm-total-ups-val" value="—"></div>
+    <div class="field"><label>Bag Weight / Pc (gms)</label><input type="text" readonly class="bw-val" value="—"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="section-label" style="margin-top:12px">Cost Breakup Per Piece</div>
+  <table class="breakup-table"><tbody class="breakup-body"></tbody></table>
+  <div class="breakup-total">
+    <span style="font-size:13px;color:var(--text-sec)">Selling Price / Pc</span>
+    <span class="selling-price">—</span>
+  </div>`;
+}
+
+function renderFoldingBox(s,el){
+  const valid=fbValid(s);
+  ['boxW','boxL','qty','gsm'].forEach(f=>{const inp=el.querySelector(`[data-field="${f}"]`);if(inp)inp.classList.toggle('invalid',!(parseFloat(s[f])>0));});
+  if(!valid){
+    el.querySelector('.fb-sw-val').value='—';el.querySelector('.fb-sl-val').value='—';
+    el.querySelector('.fb-ups-val').value='—';el.querySelector('.fb-total-ups-val').value='—';
+    el.querySelector('.bw-val').value='—';
+    el.querySelector('.breakup-body').innerHTML='';el.querySelector('.selling-price').textContent='—';
+    return;
+  }
+  const r=calcFoldingBox(s),fmt=v=>'₹'+v.toFixed(2);
+  el.querySelector('.fb-sw-val').value=r.sheetWIn.toFixed(3)+' inch';
+  el.querySelector('.fb-sl-val').value=r.sheetLIn.toFixed(3)+' inch';
+  el.querySelector('.fb-ups-val').value=r.upsW+' × '+r.upsL+' ('+r.orientation+')';
+  el.querySelector('.fb-total-ups-val').value=r.totalUps;
+  el.querySelector('.bw-val').value=r.bagWt.toFixed(4)+' gms';
+  const fbHint=el.querySelector('.hint-gsm');if(fbHint)fbHint.textContent=r.cG!==parseFloat(s.gsm)?'Using closest GSM: '+r.cG:'';
+  const laminLabel=s.lamination&&s.lamination!=='No'?s.lamination+' Cost':'Lamination Cost';
+  const foilLabel=s.foil&&s.foil!=='No'?s.foil+' Foil Cost':'Foil Cost';
+  const uvLabel=s.uv&&s.uv!=='No'?s.uv+' UV Cost':'UV Cost';
+  el.querySelector('.breakup-body').innerHTML=[
+    ['Paper Cost',fmt(r.paperCost)],['Printing Cost',fmt(r.printCost)],
+    ['Printing Plate Cost',fmt(r.plateCost)],
+    [laminLabel,fmt(r.laminCost)],['Varnish Cost',fmt(r.varnishCost)],
+    ['Die Cutting Cost',fmt(r.dieCutCost)],['Wastage',fmt(r.wastageCost)],
+    ['Pasting Cost',fmt(r.pastingCost)],
+    [foilLabel,fmt(r.foilCost)],[uvLabel,fmt(r.uvCost)],['Embossing Cost',fmt(r.embossingCost)],
+    ['Fixed / Conversion Cost',fmt(r.fixedCost)],
+    ['Packing Cost',fmt(r.packingCost)],['Transportation Cost',fmt(r.transCost)],
+    ['Margin',fmt(r.marginAmt)]
+  ].map(([l,v])=>`<tr><td style="color:var(--text-sec)">${l}</td><td>${v}</td></tr>`).join('');
+  el.querySelector('.selling-price').textContent='₹'+r.sellingPrice.toFixed(2);
+}
+
+function buildFoldingBoxHTML(s){
+  const ptOpts=FB_PAPER_TYPES.map(t=>`<option${t===(s.paperType||FB_PAPER_TYPES[0])?' selected':''}>${t}</option>`).join('');
+  const gsmOpts=FB_GSM_COLS.map(g=>`<option${String(g)===String(s.gsm)?' selected':''}>${g}</option>`).join('');
+  const printOpts=['No','1 Color','2 Color','4 Color'].map(p=>`<option${p===s.printing?' selected':''}>${p}</option>`).join('');
+  const uomOpts=['mm','cm','inch'].map(u=>`<option${u===s.uom?' selected':''}>${u}</option>`).join('');
+  const laminOpts=['No','Gloss Lamination','Matt Lamination','Thermal Lamination'].map(o=>`<option${o===(s.lamination||'No')?' selected':''}>${o}</option>`).join('');
+  const ynOpts=v=>['Yes','No'].map(o=>`<option${o===v?' selected':''}>${o}</option>`).join('');
+  const foilOpts=['No','Gold','Silver'].map(o=>`<option${o===(s.foil||'No')?' selected':''}>${o}</option>`).join('');
+  const uvOpts=['No','Hybrid','Spot','Full'].map(o=>`<option${o===(s.uv||'No')?' selected':''}>${o}</option>`).join('');
+  const grainOpts=['Not Applicable','Applicable'].map(o=>`<option${o===(s.grainDirection||'Not Applicable')?' selected':''}>${o}</option>`).join('');
+  const u=s.uom||'inch';
+  return`
+  <div class="g3 mb-md">
+    <div class="field"><label>Item Name</label><input type="text" data-field="itemDesc" value="${s.itemDesc||''}" placeholder="E.g. Gift Box" class="tc-field"></div>
+    <div class="field"><label>Paper Type</label><select data-field="paperType">${ptOpts}</select></div>
+    <div class="field"><label>Printing</label><select data-field="printing">${printOpts}</select></div>
+  </div>
+  <div class="g4 mb-md">
+    <div class="field"><label>Lamination</label><select data-field="lamination">${laminOpts}</select></div>
+    <div class="field"><label>Varnish</label><select data-field="varnish">${ynOpts(s.varnish||'No')}</select></div>
+    <div class="field"><label>Pasting</label><select data-field="pasting">${ynOpts(s.pasting||'No')}</select></div>
+    <div class="field"><label>Die Cutting</label><select data-field="dieCutting">${ynOpts(s.dieCutting||'Yes')}</select></div>
+  </div>
+  <div class="g5 mb-md">
+    <div class="field"><label>Window</label><select data-field="window">${ynOpts(s.window||'No')}</select></div>
+    <div class="field"><label>Foil</label><select data-field="foil">${foilOpts}</select></div>
+    <div class="field"><label>UV</label><select data-field="uv">${uvOpts}</select></div>
+    <div class="field"><label>Embossing</label><select data-field="embossing">${ynOpts(s.embossing||'No')}</select></div>
+    <div class="field"><label>Grain Direction</label><select data-field="grainDirection">${grainOpts}</select></div>
+  </div>
+  <div class="g4 mb-md">
+    <div class="field"><label>Quantity<span class="req">*</span></label><input type="number" data-field="qty" value="${s.qty||''}" min="1" placeholder="Required"><span class="err">Required</span></div>
+    <div class="field"><label>Delivery</label><select data-field="delivery"><option${(s.delivery||'NCR')==='NCR'?' selected':''}>NCR</option><option${s.delivery==='Non NCR'?' selected':''}>Non NCR</option></select></div>
+    <div class="field"><label>GSM<span class="req">*</span></label><input type="number" data-field="gsm" value="${s.gsm||''}" min="0" placeholder="e.g. 210"><span class="hint hint-gsm"></span><span class="err">Required</span></div>
+    <div class="field"><label>Paper Price (₹/kg)</label><input type="number" data-field="paperPrice" value="${s.paperPrice||''}" min="0" placeholder="Auto from rates"></div>
+  </div>
+  <div class="g4 mb-md">
+    <div class="field"><label>UOM</label><select data-field="uom" onchange="setUOM(${s.id},this.value)">${uomOpts}</select></div>
+    <div class="field"><label class="fb-w-lbl">Box W (${u}) (Open Size)<span class="req">*</span></label><input type="number" data-field="boxW" value="${s.boxW||''}" min="0" placeholder="Required"><span class="err">Required</span></div>
+    <div class="field"><label class="fb-l-lbl">Box L (${u}) (Open Size)<span class="req">*</span></label><input type="number" data-field="boxL" value="${s.boxL||''}" min="0" placeholder="Required"><span class="err">Required</span></div>
+  </div>
+  <div class="g5 mb-md">
+    <div class="field"><label>Sheet W (inch)</label><input type="text" readonly class="fb-sw-val" value="—"></div>
+    <div class="field"><label>Sheet L (inch)</label><input type="text" readonly class="fb-sl-val" value="—"></div>
+    <div class="field"><label>Ups (orientation)</label><input type="text" readonly class="fb-ups-val" value="—"></div>
+    <div class="field"><label>Total # Ups</label><input type="text" readonly class="fb-total-ups-val" value="—"></div>
+    <div class="field"><label>Blank Weight / Pc (gms)</label><input type="text" readonly class="bw-val" value="—"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="section-label" style="margin-top:12px">Cost Breakup Per Piece</div>
+  <table class="breakup-table"><tbody class="breakup-body"></tbody></table>
+  <div class="breakup-total">
+    <span style="font-size:13px;color:var(--text-sec)">Selling Price / Pc</span>
+    <span class="selling-price">—</span>
+  </div>`;
+}
+
+function buildPlaceholderHTML(type){return`<div class="placeholder-note">${type} — Coming Soon</div>`;}
+
+function changeSKUType(id,type){
+  const s=skus.find(x=>x.id===id);if(!s)return;
+  s.skuType=type;
+  const el=document.getElementById('sku-'+id),body=el.querySelector('.sku-body');
+  if(type==='Paper Bags (Automatic)'){body.innerHTML=buildPaperBagHTML(s);bindSKUFields(s);renderPaperBag(s,el);}
+  else if(type==='Wrapping Paper'){body.innerHTML=buildWrappingPaperHTML(s);bindSKUFields(s);renderWrappingPaper(s,el);}
+  else if(type==='Paper Bag Manual'){
+    if(!PBM_PAPER_TYPES.includes(s.paperType))s.paperType=PBM_PAPER_TYPES[0];
+    body.innerHTML=buildPaperBagManualHTML(s);bindSKUFields(s);renderPaperBagManual(s,el);
+  }
+  else if(type==='Folding Box'){
+    if(!FB_PAPER_TYPES.includes(s.paperType))s.paperType=FB_PAPER_TYPES[0];
+    if(!s.uom||s.uom==='mm')s.uom='inch';
+    body.innerHTML=buildFoldingBoxHTML(s);bindSKUFields(s);renderFoldingBox(s,el);
+  }
+  else body.innerHTML=buildPlaceholderHTML(type);
+}
+
+function addSKU(){
+  const id=++skuId;
+  const s={id,skuType:'Paper Bags (Automatic)',itemDesc:'',paperType:PAPER_TYPES[0],uom:'mm',bagW:'',bagG:'',bagH:'',gsm:'',printing:'No',delivery:'NCR',qty:'',handle:false,
+    lamination:'No',varnish:'No',pasting:'No',dieCutting:'Yes',pcsPerSheet:1,paperPrice:'',pbmPaperType:PBM_PAPER_TYPES[0],pbmGsm:String(PBM_GSM_COLS[0]),
+    boxW:'',boxL:'',window:'No',foil:'No',uv:'No',embossing:'No',grainDirection:'Not Applicable',topFold:'Required'};
+  skus.push(s);
+  const wrap=document.createElement('div');
+  wrap.id='sku-'+id;wrap.className='sku-card';
+  wrap.innerHTML=buildSKUHTML(s);
+  document.getElementById('skuContainer').appendChild(wrap);
+  wrap.querySelector('.sku-body').innerHTML=buildPaperBagHTML(s);
+  bindSKUFields(s);renderPaperBag(s,wrap);
+}
+
+function bindSKUFields(s){
+  const el=document.getElementById('sku-'+s.id);
+  el.querySelectorAll('[data-field]').forEach(inp=>{
+    if(inp.tagName==='SELECT'&&inp.dataset.field==='uom')return;
+    const ev=inp.type==='checkbox'?'change':'input';
+    inp.addEventListener(ev,()=>{s[inp.dataset.field]=inp.type==='checkbox'?inp.checked:inp.value;renderSKUCard(s);});
+    if(inp.type==='text')applyTitleCase(inp);
+  });
+}
+
+function setUOM(id,uom){
+  const s=skus.find(x=>x.id===id);if(!s)return;
+  s.uom=uom;
+  const el=document.getElementById('sku-'+id);
+  if(s.skuType==='Paper Bags (Automatic)'){
+    el.querySelectorAll('.g6 .field label').forEach(lbl=>{
+      const t=lbl.textContent.trim();
+      if(t.startsWith('Bag W'))lbl.innerHTML=`Bag W (${uom})<span class="req">*</span>`;
+      else if(t.startsWith('Bag G'))lbl.innerHTML=`Bag G (${uom})<span class="req">*</span>`;
+      else if(t.startsWith('Bag H'))lbl.innerHTML=`Bag H (${uom})<span class="req">*</span>`;
+    });
+  } else if(s.skuType==='Wrapping Paper'){
+    el.querySelectorAll('.dim-label').forEach((lbl,i)=>{const n=['Sheet W','Sheet H'];if(n[i])lbl.textContent=n[i]+' ('+uom+')';});
+  } else if(s.skuType==='Paper Bag Manual'){
+    const wl=el.querySelector('.pbm-w-lbl');if(wl)wl.innerHTML=`Bag W (${uom})<span class="req">*</span>`;
+    const gl=el.querySelector('.pbm-g-lbl');if(gl)gl.innerHTML=`Bag G (${uom})<span class="req">*</span>`;
+    const hl=el.querySelector('.pbm-h-lbl');if(hl)hl.innerHTML=`Bag H (${uom})<span class="req">*</span>`;
+  } else if(s.skuType==='Folding Box'){
+    const wl=el.querySelector('.fb-w-lbl');if(wl)wl.innerHTML=`Box W (${uom}) (Open Size)<span class="req">*</span>`;
+    const ll=el.querySelector('.fb-l-lbl');if(ll)ll.innerHTML=`Box L (${uom}) (Open Size)<span class="req">*</span>`;
+  }
+  renderSKUCard(s);
+}
+
+function deleteSKU(id){skus=skus.filter(s=>s.id!==id);const el=document.getElementById('sku-'+id);if(el)el.remove();}
+function recalcAll(){skus.forEach(s=>renderSKUCard(s));}
+
+const PANEL_TITLES={calc:'Calculator',admin:'Admin — Rates',saved:'Saved Quotes'};
+const ADMIN_PIN='2204';
+let adminUnlocked=false;
+
+function showPanel(name){
+  if(name==='admin'&&!adminUnlocked){
+    const entered=prompt('Enter PIN to access Admin — Rates:');
+    if(entered===null) return;
+    if(entered!==ADMIN_PIN){alert('Incorrect PIN.');return;}
+    adminUnlocked=true;
+  }
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>{if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+name+"'"))b.classList.add('active');});
+  document.getElementById('topbarTitle').textContent=PANEL_TITLES[name]||name;
+  document.getElementById('topbarActions').style.display=name==='calc'?'flex':'none';
+}
+
+function saveQuote(){
+  const margin=parseFloat(document.getElementById('globalMargin').value)||0;
+  const quote={id:Date.now(),clientName:document.getElementById('clientName').value||'—',quoteRef:document.getElementById('quoteRef').value||'—',date:document.getElementById('quoteDate').value||new Date().toISOString().split('T')[0],margin,
+    skus:skus.map(s=>{let calc={};if(s.skuType==='Paper Bags (Automatic)'&&pbValid(s))calc=calcPaperBag(s);else if(s.skuType==='Wrapping Paper'&&wpValid(s))calc=calcWrappingPaper(s);else if(s.skuType==='Paper Bag Manual'&&pbmValid(s))calc=calcPaperBagManual(s);else if(s.skuType==='Folding Box'&&fbValid(s))calc=calcFoldingBox(s);return{...s,calc};})};
+  savedQuotes.push(quote);renderSaved();showPanel('saved');
+}
+
+function renderSaved(){
+  const c=document.getElementById('savedContainer');
+  if(!savedQuotes.length){c.innerHTML='<p style="color:var(--text-hint);font-size:13px">No saved quotes yet.</p>';return;}
+  c.innerHTML=savedQuotes.map(q=>`
+    <div class="saved-card">
+      <div class="flex-space mb-sm">
+        <div><span style="font-size:15px;font-weight:500">${q.clientName}</span><span class="badge" style="margin-left:8px">${q.quoteRef}</span></div>
+        <span style="font-size:11.5px;color:var(--text-hint)">${q.date} · Margin ${q.margin}%</span>
+      </div>
+      <table class="breakup-table">
+        <thead><tr style="border-bottom:0.5px solid var(--border-med)">
+          <td style="font-size:11px;font-weight:600;color:var(--text-hint);text-transform:uppercase;letter-spacing:.05em;padding-bottom:6px">Item Name</td>
+          <td style="font-size:11px;font-weight:600;color:var(--text-hint);text-transform:uppercase;letter-spacing:.05em;padding-bottom:6px">Type</td>
+          <td style="font-size:11px;font-weight:600;color:var(--text-hint);text-transform:uppercase;letter-spacing:.05em;padding-bottom:6px">Paper</td>
+          <td style="font-size:11px;font-weight:600;color:var(--text-hint);text-transform:uppercase;letter-spacing:.05em;padding-bottom:6px">GSM</td>
+          <td style="font-size:11px;font-weight:600;color:var(--text-hint);text-transform:uppercase;letter-spacing:.05em;padding-bottom:6px">Qty</td>
+          <td style="font-size:11px;font-weight:600;color:var(--text-hint);text-transform:uppercase;letter-spacing:.05em;padding-bottom:6px;text-align:right">Selling Price/Pc</td>
+        </tr></thead>
+        <tbody>${q.skus.map(s=>`<tr>
+          <td>${s.itemDesc||'—'}</td>
+          <td style="color:var(--text-sec);font-size:12px">${s.skuType}</td>
+          <td style="color:var(--text-sec)">${s.paperType}</td>
+          <td style="color:var(--text-sec)">${s.gsm||'—'}</td>
+          <td style="color:var(--text-sec)">${Number(s.qty).toLocaleString()}</td>
+          <td style="text-align:right;font-weight:600;font-family:'DM Mono',monospace;font-size:12.5px">${s.calc&&s.calc.sellingPrice!=null?'₹'+s.calc.sellingPrice.toFixed(2):'—'}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`).join('');
+}
+
+function exportCSV(){
+  const margin=parseFloat(document.getElementById('globalMargin').value)||0;
+  const client=document.getElementById('clientName').value,ref=document.getElementById('quoteRef').value,date=document.getElementById('quoteDate').value;
+  const headers=['Client','Ref','Date','Margin%','SKU Type','Item Name','Paper Type','GSM','Qty','Delivery','Selling Price/Pc'];
+  const rows=skus.map(s=>{
+    let sp='—';
+    if(s.skuType==='Paper Bags (Automatic)'&&pbValid(s))sp=calcPaperBag(s).sellingPrice.toFixed(2);
+    else if(s.skuType==='Wrapping Paper'&&wpValid(s))sp=calcWrappingPaper(s).sellingPrice.toFixed(2);
+    else if(s.skuType==='Paper Bag Manual'&&pbmValid(s))sp=calcPaperBagManual(s).sellingPrice.toFixed(2);
+    else if(s.skuType==='Folding Box'&&fbValid(s))sp=calcFoldingBox(s).sellingPrice.toFixed(2);
+    return[client,ref,date,margin,s.skuType,s.itemDesc,s.paperType,s.gsm,s.qty,s.delivery,sp].join(',');
+  });
+  const csv=[headers.join(','),...rows].join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='quote_'+(ref||'export')+'_'+date+'.csv';a.click();
+}
+
+function getSheetsUrl(){return(document.getElementById('sheetsWebAppUrl')||{}).value||'';}
+
+async function sendSkuToSheets(s,quoteData){
+  const url=getSheetsUrl();
+  if(!url)return{ok:false,msg:'No URL'};
+  let calc={};
+  if(s.skuType==='Paper Bags (Automatic)'&&pbValid(s))calc=calcPaperBag(s);
+  else if(s.skuType==='Wrapping Paper'&&wpValid(s))calc=calcWrappingPaper(s);
+  else if(s.skuType==='Paper Bag Manual'&&pbmValid(s))calc=calcPaperBagManual(s);
+  else if(s.skuType==='Folding Box'&&fbValid(s))calc=calcFoldingBox(s);
+  const payload={...quoteData,...s,calc};
+  try{
+    const res=await fetch(url,{method:'POST',body:JSON.stringify(payload)});
+    const json=await res.json();
+    return{ok:json.status==='ok',msg:json.message||json.sheet||''};
+  }catch(e){return{ok:false,msg:e.toString()};}
+}
+
+async function exportToSheets(){
+  const url=getSheetsUrl();
+  if(!url){alert('Please enter your Google Apps Script Web App URL in Admin — Rates → Google Sheets Integration.');return;}
+  if(!skus.length){alert('No SKUs to export.');return;}
+  const btn=document.getElementById('sheetsBtn');
+  btn.textContent='Exporting…';btn.disabled=true;
+  const quoteData={
+    clientName:document.getElementById('clientName').value||'',
+    quoteRef:document.getElementById('quoteRef').value||'',
+    date:document.getElementById('quoteDate').value||'',
+    margin:parseFloat(document.getElementById('globalMargin').value)||0
+  };
+  let success=0,fail=0;
+  for(const s of skus){
+    const res=await sendSkuToSheets(s,quoteData);
+    if(res.ok)success++;else fail++;
+  }
+  btn.textContent='↗ Export To Sheets';btn.disabled=false;
+  if(fail===0)alert(`✓ ${success} SKU${success>1?'s':''} exported to Google Sheets successfully!`);
+  else alert(`Exported ${success} SKU${success>1?'s':''}. ${fail} failed — check console for details.`);
+}
+
+async function testSheetsConnection(){
+  const url=getSheetsUrl();
+  if(!url){alert('Please enter a URL first.');return;}
+  try{
+    const res=await fetch(url);
+    const json=await res.json();
+    if(json.status==='ok')alert('✓ Connection successful! Web App is reachable.');
+    else alert('Connected but unexpected response: '+JSON.stringify(json));
+  }catch(e){alert('Connection failed: '+e.toString()+'\n\nMake sure the Web App is deployed with access set to "Anyone".');}
+}
+
+initRates();buildPaperMatrix();buildPBMPaperMatrix();buildFBPaperMatrix();
+document.getElementById('quoteDate').value=new Date().toISOString().split('T')[0];
+document.querySelectorAll('.tc-field').forEach(applyTitleCase);
+addSKU();
+</script>
+</body>
+</html>
