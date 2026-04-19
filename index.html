@@ -1099,15 +1099,25 @@ function exportPDF(){
   const rawDate=document.getElementById('quoteDate').value||'';
   const date=rawDate?new Date(rawDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
 
-  /* Build SKU sections */
-  function row(label,value){
-    if(!value&&value!==0)return'';
-    return`<tr><td class="lbl">${label}</td><td class="val">${value}</td></tr>`;
+  /* Build a cell: only emit if value is truthy */
+  function cell(label,value){
+    if(value===''||value===null||value===undefined||value===false)return null;
+    return{label,value:String(value)};
   }
-  function section(title,rows){
-    const filled=rows.filter(Boolean).join('');
-    if(!filled)return'';
-    return`<div class="sec-title">${title}</div><table class="info-tbl">${filled}</table>`;
+
+  /* Render cells as a responsive grid table */
+  function gridTable(cells){
+    const filled=cells.filter(Boolean);
+    if(!filled.length)return'';
+    const tds=filled.map(c=>`<td><span class="cl">${c.label}</span><span class="cv">${c.value}</span></td>`).join('');
+    return`<table class="gtbl"><tbody><tr>${tds}</tr></tbody></table>`;
+  }
+
+  /* Section with heading */
+  function sec(title,cells){
+    const filled=cells.filter(Boolean);
+    if(!filled.length)return'';
+    return`<div class="sec"><div class="sec-hd">${title}</div>${gridTable(filled)}</div>`;
   }
 
   let skuHTML='';
@@ -1119,128 +1129,126 @@ function exportPDF(){
     else if(s.skuType==='Folding Box'&&fbValid(s))calc=calcFoldingBox(s);
 
     const sp=calc.sellingPrice?'₹'+calc.sellingPrice.toFixed(2):'—';
-    const u=s.uom||'mm';
+    const u=(s.uom||'mm').toUpperCase();
+    const qty=s.qty?Number(s.qty).toLocaleString('en-IN'):'';
 
-    let details='';
+    let body='';
+
     if(s.skuType==='Paper Bags (Automatic)'){
-      details=section('Bag Details',[
-        row('Paper Type',s.paperType),row('GSM',s.gsm),row('Printing',s.printing),
-        row('Delivery',s.delivery),row('Quantity',s.qty?Number(s.qty).toLocaleString('en-IN'):''),
-        row('UOM',u),row('Bag W ('+u+')',s.bagW),row('Bag G ('+u+')',s.bagG),row('Bag H ('+u+')',s.bagH),
-        row('Handle',s.handle?'Yes':'No')
-      ])+section('Derived',[
-        row('Reel W (cm)',calc.swCm?calc.swCm.toFixed(3):''),
-        row('Cutting Length (cm)',calc.slCm?calc.slCm.toFixed(3):''),
-        row('Bag Weight / Pc (gms)',calc.bagWt?calc.bagWt.toFixed(4):'')
+      body=sec('Specifications',[
+        cell('Paper Type',s.paperType),cell('GSM',s.gsm),
+        cell('Bag W ('+u+')',s.bagW),cell('Bag G ('+u+')',s.bagG),cell('Bag H ('+u+')',s.bagH),
+        cell('Printing',s.printing),cell('Handle',s.handle?'Yes':'No'),
+        cell('Delivery',s.delivery),cell('Quantity',qty)
       ]);
     } else if(s.skuType==='Wrapping Paper'){
-      details=section('Sheet Details',[
-        row('Paper Type',s.paperType),row('GSM',s.gsm),row('Printing',s.printing),
-        row('Delivery',s.delivery),row('Quantity',s.qty?Number(s.qty).toLocaleString('en-IN'):''),
-        row('UOM',u),row('Sheet W ('+u+')',s.bagW),row('Sheet H ('+u+')',s.bagH)
-      ])+section('Derived',[
-        row('# Of Ups',calc.ups),
-        row('Reel W (cm)',calc.reelWCm?calc.reelWCm.toFixed(3):''),
-        row('Cutting Length (cm)',calc.cutLenCm?calc.cutLenCm.toFixed(3):''),
-        row('Sheet Weight / Pc (gms)',calc.bagWt?calc.bagWt.toFixed(4):'')
+      body=sec('Specifications',[
+        cell('Paper Type',s.paperType),cell('GSM',s.gsm),
+        cell('Sheet W ('+u+')',s.bagW),cell('Sheet H ('+u+')',s.bagH),
+        cell('Printing',s.printing),
+        cell('Delivery',s.delivery),cell('Quantity',qty)
       ]);
     } else if(s.skuType==='Paper Bag Manual'){
-      details=section('Bag Details',[
-        row('Paper Type',s.paperType),row('GSM',s.gsm),row('Printing',s.printing),
-        row('Delivery',s.delivery),row('Quantity',s.qty?Number(s.qty).toLocaleString('en-IN'):''),
-        row('UOM',u),row('Bag W ('+u+')',s.bagW),row('Bag G ('+u+')',s.bagG),row('Bag H ('+u+')',s.bagH)
-      ])+section('Finishing',[
-        row('Lamination',s.lamination&&s.lamination!=='No'?s.lamination:''),
-        row('Varnish',s.varnish==='Yes'?'Yes':''),
-        row('Die Cutting',s.dieCutting==='Yes'?'Yes':''),
-        row('Foil',s.foil&&s.foil!=='No'?s.foil:''),
-        row('UV',s.uv&&s.uv!=='No'?s.uv:''),
-        row('Embossing',s.embossing==='Yes'?'Yes':''),
-        row('Handle',s.handle==='Yes'||s.handle===true?'Yes':'No'),
-        row('Top Fold',s.topFold)
-      ])+section('Derived',[
-        row('Sheet W (inch)',calc.swIn?calc.swIn.toFixed(3):''),
-        row('Sheet L (inch)',calc.slIn?calc.slIn.toFixed(3)+(calc.topFoldExtra?' (+1" top fold)':''):''),
-        row('Ups (orientation)',calc.upsW&&calc.upsL?calc.upsW+' × '+calc.upsL+' ('+calc.upsOrientation+')':''),
-        row('Total # Ups',calc.totalUps),
-        row('Bag Weight / Pc (gms)',calc.bagWt?calc.bagWt.toFixed(4):'')
+      body=sec('Specifications',[
+        cell('Paper Type',s.paperType),cell('GSM',s.gsm),
+        cell('Bag W ('+u+')',s.bagW),cell('Bag G ('+u+')',s.bagG),cell('Bag H ('+u+')',s.bagH),
+        cell('Printing',s.printing),
+        cell('Delivery',s.delivery),cell('Quantity',qty)
+      ])+sec('Finishing',[
+        cell('Lamination',s.lamination&&s.lamination!=='No'?s.lamination:null),
+        cell('Varnish',s.varnish==='Yes'?'Yes':null),
+        cell('Die Cutting',s.dieCutting==='Yes'?'Yes':null),
+        cell('Foil',s.foil&&s.foil!=='No'?s.foil:null),
+        cell('UV',s.uv&&s.uv!=='No'?s.uv:null),
+        cell('Embossing',s.embossing==='Yes'?'Yes':null),
+        cell('Handle',s.handle==='Yes'||s.handle===true?'Yes':'No'),
+        cell('Top Fold',s.topFold&&s.topFold!=='Not Required'?s.topFold:null)
       ]);
     } else if(s.skuType==='Folding Box'){
-      details=section('Box Details',[
-        row('Paper Type',s.paperType),row('GSM',s.gsm),row('Printing',s.printing),
-        row('Quantity',s.qty?Number(s.qty).toLocaleString('en-IN'):''),
-        row('UOM',u),
-        row('Box W ('+u+') Open Size',s.boxW),row('Box L ('+u+') Open Size',s.boxL)
-      ])+section('Finishing',[
-        row('Lamination',s.lamination&&s.lamination!=='No'?s.lamination:''),
-        row('Varnish',s.varnish==='Yes'?'Yes':''),
-        row('Pasting',s.pasting==='Yes'?'Yes':''),
-        row('Die Cutting',s.dieCutting==='Yes'?'Yes':''),
-        row('Window',s.window==='Yes'?'Yes':''),
-        row('Foil',s.foil&&s.foil!=='No'?s.foil:''),
-        row('UV',s.uv&&s.uv!=='No'?s.uv:''),
-        row('Embossing',s.embossing==='Yes'?'Yes':''),
-        row('Grain Direction',s.grainDirection)
-      ])+section('Derived',[
-        row('Sheet W (inch)',calc.sheetWIn?calc.sheetWIn.toFixed(3):''),
-        row('Sheet L (inch)',calc.sheetLIn?calc.sheetLIn.toFixed(3):''),
-        row('Ups (orientation)',calc.upsW&&calc.upsL?calc.upsW+' × '+calc.upsL+' ('+calc.orientation+')':''),
-        row('Total # Ups',calc.totalUps),
-        row('Blank Weight / Pc (gms)',calc.bagWt?calc.bagWt.toFixed(4):'')
+      body=sec('Specifications',[
+        cell('Paper Type',s.paperType),cell('GSM',s.gsm),
+        cell('Box W ('+u+') Open Size',s.boxW),cell('Box L ('+u+') Open Size',s.boxL),
+        cell('Printing',s.printing),cell('Quantity',qty)
+      ])+sec('Finishing',[
+        cell('Lamination',s.lamination&&s.lamination!=='No'?s.lamination:null),
+        cell('Varnish',s.varnish==='Yes'?'Yes':null),
+        cell('Pasting',s.pasting==='Yes'?'Yes':null),
+        cell('Die Cutting',s.dieCutting==='Yes'?'Yes':null),
+        cell('Window',s.window==='Yes'?'Yes':null),
+        cell('Foil',s.foil&&s.foil!=='No'?s.foil:null),
+        cell('UV',s.uv&&s.uv!=='No'?s.uv:null),
+        cell('Embossing',s.embossing==='Yes'?'Yes':null),
+        cell('Grain Direction',s.grainDirection&&s.grainDirection!=='Not Applicable'?s.grainDirection:null)
       ]);
     }
 
-    skuHTML+=`<div class="sku-block">
-      <div class="sku-title">
-        <span class="sku-num">SKU ${idx+1}</span>
-        <span class="sku-type">${s.skuType}</span>
-        ${s.itemDesc?`<span class="sku-name">${s.itemDesc}</span>`:''}
-        <span class="sku-sp">Selling Price / Pc: <b>${sp}</b></span>
+    skuHTML+=`
+    <div class="sku-block">
+      <div class="sku-hdr">
+        <div class="sku-left">
+          <span class="sku-badge">SKU ${idx+1}</span>
+          <span class="sku-type">${s.skuType}</span>
+          ${s.itemDesc?`<span class="sku-name">— ${s.itemDesc}</span>`:''}
+        </div>
+        <div class="sku-price">
+          <span class="sp-label">Selling Price / Pc</span>
+          <span class="sp-val">${sp}</span>
+        </div>
       </div>
-      ${details}
+      <div class="sku-body">${body}</div>
     </div>`;
   });
 
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>Quote — ${ref}</title>
-  <style>
+  const css=`
     *{box-sizing:border-box;margin:0;padding:0}
-    @page{margin:16mm 14mm;size:A4}
-    body{font-family:Arial,sans-serif;font-size:11px;color:#222;background:#fff}
-    .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:2px solid #2c5f2e;margin-bottom:18px}
-    .header-left .title{font-size:22px;font-weight:700;color:#2c5f2e;letter-spacing:-.3px}
-    .header-left .company{font-size:12px;color:#555;margin-top:3px}
-    .header-right{text-align:right;font-size:11px;color:#444;line-height:2}
-    .header-right b{color:#222}
-    .sku-block{border:1px solid #ddd;border-radius:6px;margin-bottom:16px;page-break-inside:avoid;overflow:hidden}
-    .sku-title{background:#f5f5f5;border-bottom:1px solid #ddd;padding:8px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-    .sku-num{font-size:10px;font-weight:700;background:#2c5f2e;color:#fff;padding:2px 8px;border-radius:10px}
-    .sku-type{font-size:11px;font-weight:600;color:#333}
-    .sku-name{font-size:11px;color:#555}
-    .sku-sp{margin-left:auto;font-size:13px;color:#2c5f2e}
-    .sku-sp b{font-size:15px}
-    .sec-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;padding:6px 12px 3px;border-top:1px solid #eee}
-    .sec-title:first-child{border-top:none}
-    .info-tbl{width:100%;border-collapse:collapse;padding:0 12px 8px}
-    .info-tbl td{padding:3px 12px;vertical-align:top}
-    .info-tbl .lbl{color:#777;width:45%;font-size:10.5px}
-    .info-tbl .val{color:#111;font-size:11px;font-weight:500}
-    .info-tbl tr:nth-child(even) td{background:#fafafa}
-    .footer{margin-top:24px;padding-top:10px;border-top:1px solid #ddd;font-size:10px;color:#999;text-align:center}
-  </style>
-  </head><body>
-  <div class="header">
-    <div class="header-left">
-      <div class="title">Cost Quote</div>
-      <div class="company">${client}</div>
+    @page{margin:15mm 13mm;size:A4}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#1a1a1a;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    /* ── Header ── */
+    .hdr{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:14px;border-bottom:3px solid #2c5f2e;margin-bottom:20px}
+    .hdr-title{font-size:26px;font-weight:700;color:#2c5f2e;letter-spacing:-.5px;line-height:1}
+    .hdr-client{font-size:13px;color:#444;margin-top:5px;font-weight:500}
+    .hdr-meta{text-align:right;line-height:1.9;font-size:11px;color:#555}
+    .hdr-meta strong{color:#1a1a1a;font-weight:600}
+    /* ── SKU block ── */
+    .sku-block{border:1px solid #e0e0e0;border-radius:8px;margin-bottom:18px;page-break-inside:avoid;overflow:hidden}
+    .sku-hdr{background:#2c5f2e;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+    .sku-left{display:flex;align-items:center;gap:10px}
+    .sku-badge{background:#fff;color:#2c5f2e;font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;letter-spacing:.04em}
+    .sku-type{color:#fff;font-size:12px;font-weight:600}
+    .sku-name{color:rgba(255,255,255,.75);font-size:11px}
+    .sku-price{text-align:right}
+    .sp-label{display:block;font-size:9px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.06em;margin-bottom:1px}
+    .sp-val{font-size:18px;font-weight:700;color:#fff}
+    /* ── Sections ── */
+    .sku-body{padding:12px 14px 10px}
+    .sec{margin-bottom:12px}
+    .sec:last-child{margin-bottom:0}
+    .sec-hd{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#2c5f2e;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #e8f5e9}
+    /* ── Grid table ── */
+    .gtbl{width:100%;border-collapse:collapse}
+    .gtbl td{vertical-align:top;padding:5px 8px;border:1px solid #efefef;background:#fff;width:25%}
+    .gtbl tr:nth-child(even) td{background:#f9f9f9}
+    .cl{display:block;font-size:9px;color:#888;font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+    .cv{display:block;font-size:11.5px;font-weight:600;color:#1a1a1a}
+    /* ── Footer ── */
+    .footer{margin-top:20px;padding-top:10px;border-top:1px solid #e0e0e0;font-size:9.5px;color:#999;text-align:center;line-height:1.8}
+  `;
+
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Quote — ${ref}</title><style>${css}</style></head><body>
+  <div class="hdr">
+    <div>
+      <div class="hdr-title">Cost Quote</div>
+      <div class="hdr-client">${client}</div>
     </div>
-    <div class="header-right">
-      <div><b>Quote Ref:</b> ${ref}</div>
-      <div><b>Date:</b> ${date}</div>
+    <div class="hdr-meta">
+      <div><strong>Quote Ref</strong> &nbsp;${ref}</div>
+      <div><strong>Date</strong> &nbsp;${date}</div>
     </div>
   </div>
   ${skuHTML}
-  <div class="footer">This quote is computer generated. All prices are per piece excluding taxes. &nbsp;|&nbsp; GST extra as applicable. &nbsp;|&nbsp; Transport extra as applicable.</div>
+  <div class="footer">
+    This quote is computer generated &nbsp;·&nbsp; All prices are per piece, excluding taxes &nbsp;·&nbsp; GST extra as applicable &nbsp;·&nbsp; Transport extra as applicable
+  </div>
   <script>window.onload=function(){window.print();}<\/script>
   </body></html>`;
 
