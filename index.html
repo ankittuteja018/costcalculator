@@ -301,17 +301,17 @@
       <div class="card" style="margin-top:14px">
         <div class="section-label">Company Details (shown on PDF quotes)</div>
         <div class="g2" style="margin-bottom:10px">
-          <div class="field"><label>Company Name</label><input type="text" id="coName" placeholder="Aaray Packaging Private Limited"></div>
-          <div class="field"><label>Tagline / Unit</label><input type="text" id="coTagline" placeholder="Unit I: A7/64, GT Road Industrial Area, Ghaziabad"></div>
+          <div class="field"><label>Company Name</label><input type="text" id="coName" placeholder="Aaray Packaging Private Limited" oninput="saveCoDetails()"></div>
+          <div class="field"><label>Tagline / Unit</label><input type="text" id="coTagline" placeholder="Unit I: A7/64, GT Road Industrial Area, Ghaziabad" oninput="saveCoDetails()"></div>
         </div>
         <div class="g2" style="margin-bottom:10px">
           <div class="field"><label>Address Line 1</label><input type="text" id="coAddr1" placeholder="Unit I: A7/64 & A7/65, South Side GT Road, Ghaziabad"></div>
           <div class="field"><label>Address Line 2</label><input type="text" id="coAddr2" placeholder="Unit II: 27MI & 28MI, South Side GT Road, Ghaziabad"></div>
         </div>
         <div class="g3">
-          <div class="field"><label>Website</label><input type="text" id="coWeb" placeholder="www.yourcompany.in"></div>
-          <div class="field"><label>Email</label><input type="text" id="coEmail" placeholder="orders@yourcompany.in"></div>
-          <div class="field"><label>Phone</label><input type="text" id="coPhone" placeholder="+91 9311802540"></div>
+          <div class="field"><label>Website</label><input type="text" id="coWeb" placeholder="www.yourcompany.in" oninput="saveCoDetails()"></div>
+          <div class="field"><label>Email</label><input type="text" id="coEmail" placeholder="orders@yourcompany.in" oninput="saveCoDetails()"></div>
+          <div class="field"><label>Phone</label><input type="text" id="coPhone" placeholder="+91 9311802540" oninput="saveCoDetails()"></div>
         </div>
       </div>
 
@@ -1117,13 +1117,18 @@ function exportPDF(){
   const date=rawDate?new Date(rawDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
 
   /* Company details */
-  const coName=(document.getElementById('coName')||{}).value||'';
-  const coTagline=(document.getElementById('coTagline')||{}).value||'';
-  const coAddr1=(document.getElementById('coAddr1')||{}).value||'';
-  const coAddr2=(document.getElementById('coAddr2')||{}).value||'';
-  const coWeb=(document.getElementById('coWeb')||{}).value||'';
-  const coEmail=(document.getElementById('coEmail')||{}).value||'';
-  const coPhone=(document.getElementById('coPhone')||{}).value||'';
+  function getCoField(id){
+    const el=document.getElementById(id);
+    if(el&&el.value.trim())return el.value.trim();
+    try{return localStorage.getItem('co_'+id)||'';}catch(e){return'';}
+  }
+  const coName=getCoField('coName');
+  const coTagline=getCoField('coTagline');
+  const coAddr1=getCoField('coAddr1');
+  const coAddr2=getCoField('coAddr2');
+  const coWeb=getCoField('coWeb');
+  const coEmail=getCoField('coEmail');
+  const coPhone=getCoField('coPhone');
 
   /* Letterhead HTML — only shown if company name is set */
   const contactParts=[coWeb,coEmail,coPhone].filter(Boolean);
@@ -1181,24 +1186,19 @@ function exportPDF(){
 
     if(s.skuType==='Paper Bags (Automatic)'){
       body=sec('Specifications',[
-        cell('Paper Type',s.paperType),cell('GSM',s.gsm),
-        cell('Bag W ('+u+')',s.bagW),cell('Bag G ('+u+')',s.bagG),cell('Bag H ('+u+')',s.bagH),
-        cell('Printing',s.printing),cell('Handle',s.handle&&s.handle!=='No'?'Yes':'No'),
-        cell('Delivery',s.delivery),cell('Quantity',qty)
+        cell('Paper Type',s.paperType),cell('GSM',s.gsm),cell('Printing',s.printing),cell('Delivery',s.delivery),
+        cell('Bag W ('+u+')',s.bagW),cell('Bag G ('+u+')',s.bagG),cell('Bag H ('+u+')',s.bagH),cell('Handle',s.handle&&s.handle!=='No'?'Yes':'No'),
+        cell('Quantity',qty)
       ]);
     } else if(s.skuType==='Wrapping Paper'){
       body=sec('Specifications',[
-        cell('Paper Type',s.paperType),cell('GSM',s.gsm),
-        cell('Sheet W ('+u+')',s.bagW),cell('Sheet H ('+u+')',s.bagH),
-        cell('Printing',s.printing),
-        cell('Delivery',s.delivery),cell('Quantity',qty)
+        cell('Paper Type',s.paperType),cell('GSM',s.gsm),cell('Printing',s.printing),cell('Delivery',s.delivery),
+        cell('Sheet W ('+u+')',s.bagW),cell('Sheet H ('+u+')',s.bagH),cell('Quantity',qty)
       ]);
     } else if(s.skuType==='Paper Bag Manual'){
       body=sec('Specifications',[
-        cell('Paper Type',s.paperType),cell('GSM',s.gsm),
-        cell('Bag W ('+u+')',s.bagW),cell('Bag G ('+u+')',s.bagG),cell('Bag H ('+u+')',s.bagH),
-        cell('Printing',s.printing),
-        cell('Delivery',s.delivery),cell('Quantity',qty)
+        cell('Paper Type',s.paperType),cell('GSM',s.gsm),cell('Printing',s.printing),cell('Delivery',s.delivery),
+        cell('Bag W ('+u+')',s.bagW),cell('Bag G ('+u+')',s.bagG),cell('Bag H ('+u+')',s.bagH),cell('Quantity',qty)
       ])+sec('Finishing',[
         cell('Lamination',s.lamination&&s.lamination!=='No'?s.lamination:null),
         cell('Varnish',s.varnish==='Yes'?'Yes':null),
@@ -1211,9 +1211,8 @@ function exportPDF(){
       ]);
     } else if(s.skuType==='Folding Box'){
       body=sec('Specifications',[
-        cell('Paper Type',s.paperType),cell('GSM',s.gsm),
-        cell('Box W ('+u+') Open Size',s.boxW),cell('Box L ('+u+') Open Size',s.boxL),
-        cell('Printing',s.printing),cell('Quantity',qty)
+        cell('Paper Type',s.paperType),cell('GSM',s.gsm),cell('Printing',s.printing),cell('Quantity',qty),
+        cell('Box W ('+u+') Open Size',s.boxW),cell('Box L ('+u+') Open Size',s.boxL)
       ])+sec('Finishing',[
         cell('Lamination',s.lamination&&s.lamination!=='No'?s.lamination:null),
         cell('Varnish',s.varnish==='Yes'?'Yes':null),
@@ -1354,7 +1353,19 @@ async function testSheetsConnection(){
   }catch(e){alert('Connection failed: '+e.toString()+'\n\nMake sure the Web App is deployed with access set to "Anyone".');}
 }
 
-initRates();buildPaperMatrix();buildPBMPaperMatrix();buildFBPaperMatrix();
+function saveCoDetails(){
+  ['coName','coTagline','coAddr1','coAddr2','coWeb','coEmail','coPhone'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)try{localStorage.setItem('co_'+id,el.value);}catch(e){}
+  });
+}
+function loadCoDetails(){
+  ['coName','coTagline','coAddr1','coAddr2','coWeb','coEmail','coPhone'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)try{const v=localStorage.getItem('co_'+id);if(v)el.value=v;}catch(e){}
+  });
+}
+initRates();buildPaperMatrix();buildPBMPaperMatrix();buildFBPaperMatrix();loadCoDetails();
 document.getElementById('quoteDate').value=new Date().toISOString().split('T')[0];
 document.querySelectorAll('.tc-field').forEach(applyTitleCase);
 addSKU();
