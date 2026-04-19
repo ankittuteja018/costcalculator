@@ -149,7 +149,7 @@
       <div class="card">
         <div class="section-label">Client Details</div>
         <div class="g3" style="max-width:72%">
-          <div class="field"><label>Client Name</label><input type="text" id="clientName" placeholder="Acme Packaging Co." class="tc-field"></div>
+          <div class="field"><label>Client Name<span class="req">*</span></label><input type="text" id="clientName" placeholder="Required" class="tc-field" oninput="this.classList.remove('invalid');const e=document.getElementById('clientNameErr');if(e)e.style.display='none'"><span class="err" id="clientNameErr" style="display:none">Required</span></div>
           <div class="field"><label>Quote Ref</label><input type="text" id="quoteRef" placeholder="Q-2026-001"></div>
           <div class="field"><label>Date</label><input type="date" id="quoteDate"></div>
         </div>
@@ -428,7 +428,7 @@ function calcPaperBag(s){
   const wc=(paperCost+printCost+plateCost)*getRate('wastage')/100;
   const fr=gsm<=60?getRate('fixedR60'):gsm<=80?getRate('fixedR80'):getRate('fixedR81');
   const fixedCost=Math.max(getRate('fixedMin'),Math.min(getRate('fixedMax'),fr*bagWt/1000));
-  const handleCost=s.handle?getRate('handleCost'):0;
+  const handleCost=(s.handle==='Yes'||s.handle===true)?getRate('handleCost'):0;
   const packingCost=getRate('packingCost');
   const transCost=(s.delivery==='NCR'?getRate('transNCR'):getRate('transNonNCR'))*bagWt/1000;
   const sub=paperCost+printCost+plateCost+wc+fixedCost+handleCost+packingCost+transCost;
@@ -766,7 +766,7 @@ function buildPaperBagHTML(s){
   </div>
   <div class="g4 mb-md">
     <div class="field"><label>Quantity<span class="req">*</span></label><input type="number" data-field="qty" value="${s.qty||''}" min="1" placeholder="Required"><span class="err">Required</span></div>
-    <div class="handle-wrap"><span class="hl">Handle</span><label class="handle-box"><input type="checkbox" data-field="handle"${s.handle?' checked':''}><span>Include Handle</span></label></div>
+    <div class="field"><label>Handle</label><select data-field="handle"><option${(!s.handle||s.handle==='No'||s.handle===false)?' selected':''}>No</option><option${(s.handle==='Yes'||s.handle===true)?' selected':''}>Yes</option></select></div>
     <div class="field"><label>Reel W (cm)</label><input type="text" readonly class="reel-w-val" value="—"></div>
     <div class="field"><label>Cutting Length (cm)</label><input type="text" readonly class="cut-len-val" value="—"></div>
   </div>
@@ -988,7 +988,7 @@ function changeSKUType(id,type){
 
 function addSKU(){
   const id=++skuId;
-  const s={id,skuType:'Paper Bags (Automatic)',itemDesc:'',paperType:PAPER_TYPES[0],uom:'mm',bagW:'',bagG:'',bagH:'',gsm:'',printing:'No',delivery:'NCR',qty:'',handle:'Yes',
+  const s={id,skuType:'Paper Bags (Automatic)',itemDesc:'',paperType:PAPER_TYPES[0],uom:'mm',bagW:'',bagG:'',bagH:'',gsm:'',printing:'No',delivery:'NCR',qty:'',handle:'No',
     lamination:'No',varnish:'No',pasting:'No',dieCutting:'Yes',pcsPerSheet:1,paperPrice:'',pbmPaperType:PBM_PAPER_TYPES[0],pbmGsm:String(PBM_GSM_COLS[0]),
     boxW:'',boxL:'',window:'No',foil:'No',uv:'No',embossing:'No',grainDirection:'Not Applicable',topFold:'Required'};
   skus.push(s);
@@ -1111,7 +1111,17 @@ function exportCSV(){
 }
 
 function exportPDF(){
-  const client=document.getElementById('clientName').value.trim()||'—';
+  const clientEl=document.getElementById('clientName');
+  const client=clientEl?clientEl.value.trim():'';
+  if(!client){
+    const errEl=document.getElementById('clientNameErr');
+    if(errEl){errEl.style.display='block';}
+    if(clientEl)clientEl.classList.add('invalid');
+    clientEl.focus();
+    return;
+  }
+  if(clientEl)clientEl.classList.remove('invalid');
+  const errEl2=document.getElementById('clientNameErr');if(errEl2)errEl2.style.display='none';
   const ref=document.getElementById('quoteRef').value.trim()||'—';
   const rawDate=document.getElementById('quoteDate').value||'';
   const date=rawDate?new Date(rawDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
