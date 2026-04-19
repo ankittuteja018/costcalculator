@@ -1111,24 +1111,25 @@ function exportCSV(){
 }
 
 function exportPDF(){
-  const client=document.getElementById('clientName').value||'—';
-  const ref=document.getElementById('quoteRef').value||'—';
+  const client=document.getElementById('clientName').value.trim()||'—';
+  const ref=document.getElementById('quoteRef').value.trim()||'—';
   const rawDate=document.getElementById('quoteDate').value||'';
   const date=rawDate?new Date(rawDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
 
-  /* Company details */
-  function getCoField(id){
+  /* Company details — DOM value first, then localStorage, then hardcoded default */
+  function getCoField(id,def){
     const el=document.getElementById(id);
     if(el&&el.value.trim())return el.value.trim();
-    try{return localStorage.getItem('co_'+id)||'';}catch(e){return'';}
+    try{const v=localStorage.getItem('co_'+id);if(v&&v.trim())return v.trim();}catch(e){}
+    return def||'';
   }
-  const coName=getCoField('coName');
-  const coTagline=getCoField('coTagline');
-  const coAddr1=getCoField('coAddr1');
-  const coAddr2=getCoField('coAddr2');
-  const coWeb=getCoField('coWeb');
-  const coEmail=getCoField('coEmail');
-  const coPhone=getCoField('coPhone');
+  const coName=getCoField('coName','AARAY PACKAGING PRIVATE LIMITED');
+  const coTagline=getCoField('coTagline','');
+  const coAddr1=getCoField('coAddr1','Unit I: A7/64 & A7/65, South Side GT Road Industrial Area, Ghaziabad');
+  const coAddr2=getCoField('coAddr2','Unit II: 27MI & 28MI, South Side GT Road Industrial Area, Ghaziabad');
+  const coWeb=getCoField('coWeb','www.rapackaging.in');
+  const coEmail=getCoField('coEmail','orders@rapackaging.in');
+  const coPhone=getCoField('coPhone','+91 9311802540');
 
   /* Letterhead HTML — only shown if company name is set */
   const contactParts=[coWeb,coEmail,coPhone].filter(Boolean);
@@ -1363,7 +1364,7 @@ function loadCoDetails(){
   ['coName','coTagline','coAddr1','coAddr2','coWeb','coEmail','coPhone'].forEach(id=>{
     const el=document.getElementById(id);
     if(!el)return;
-    try{const v=localStorage.getItem('co_'+id);if(v!==null)el.value=v;}catch(e){}
+    try{const v=localStorage.getItem('co_'+id);if(v&&v.trim())el.value=v;}catch(e){}
   });
 }
 initRates();buildPaperMatrix();buildPBMPaperMatrix();buildFBPaperMatrix();loadCoDetails();
