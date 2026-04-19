@@ -301,17 +301,17 @@
       <div class="card" style="margin-top:14px">
         <div class="section-label">Company Details (shown on PDF quotes)</div>
         <div class="g2" style="margin-bottom:10px">
-          <div class="field"><label>Company Name</label><input type="text" id="coName" placeholder="Aaray Packaging Private Limited" oninput="saveCoDetails()"></div>
-          <div class="field"><label>Tagline / Unit</label><input type="text" id="coTagline" placeholder="Unit I: A7/64, GT Road Industrial Area, Ghaziabad" oninput="saveCoDetails()"></div>
+          <div class="field"><label>Company Name</label><input type="text" id="coName" value="AARAY PACKAGING PRIVATE LIMITED" placeholder="Company Name" oninput="saveCoDetails()"></div>
+          <div class="field"><label>Tagline / Unit</label><input type="text" id="coTagline" value="" placeholder="Tagline (optional)" oninput="saveCoDetails()"></div>
         </div>
         <div class="g2" style="margin-bottom:10px">
           <div class="field"><label>Address Line 1</label><input type="text" id="coAddr1" placeholder="Unit I: A7/64 & A7/65, South Side GT Road, Ghaziabad"></div>
           <div class="field"><label>Address Line 2</label><input type="text" id="coAddr2" placeholder="Unit II: 27MI & 28MI, South Side GT Road, Ghaziabad"></div>
         </div>
         <div class="g3">
-          <div class="field"><label>Website</label><input type="text" id="coWeb" placeholder="www.yourcompany.in" oninput="saveCoDetails()"></div>
-          <div class="field"><label>Email</label><input type="text" id="coEmail" placeholder="orders@yourcompany.in" oninput="saveCoDetails()"></div>
-          <div class="field"><label>Phone</label><input type="text" id="coPhone" placeholder="+91 9311802540" oninput="saveCoDetails()"></div>
+          <div class="field"><label>Website</label><input type="text" id="coWeb" value="www.rapackaging.in" placeholder="Website" oninput="saveCoDetails()"></div>
+          <div class="field"><label>Email</label><input type="text" id="coEmail" value="orders@rapackaging.in" placeholder="Email" oninput="saveCoDetails()"></div>
+          <div class="field"><label>Phone</label><input type="text" id="coPhone" value="+91 9311802540" placeholder="Phone" oninput="saveCoDetails()"></div>
         </div>
       </div>
 
@@ -1133,12 +1133,12 @@ function exportPDF(){
   /* Letterhead HTML — only shown if company name is set */
   const contactParts=[coWeb,coEmail,coPhone].filter(Boolean);
   const letterhead=coName?`
-    <div style="text-align:center;padding:14px 20px 12px;border:2px solid #2c5f2e;border-radius:6px;margin-bottom:18px">
-      <div style="font-size:20px;font-weight:700;color:#2c5f2e;letter-spacing:.5px;text-transform:uppercase">${coName}</div>
+    <div style="text-align:center;padding:14px 20px 12px;border:2px solid #1a3c6e;border-radius:6px;margin-bottom:18px">
+      <div style="font-size:20px;font-weight:700;color:#1a3c6e;letter-spacing:.5px;text-transform:uppercase">${coName}</div>
       ${coTagline?`<div style="font-size:10px;color:#555;margin-top:3px">${coTagline}</div>`:''}
       ${coAddr1?`<div style="font-size:10px;color:#555;margin-top:2px">${coAddr1}</div>`:''}
       ${coAddr2?`<div style="font-size:10px;color:#555;margin-top:1px">${coAddr2}</div>`:''}
-      ${contactParts.length?`<div style="font-size:10px;color:#2c5f2e;margin-top:5px">${contactParts.join(' &nbsp;|&nbsp; ')}</div>`:''}
+      ${contactParts.length?`<div style="font-size:10px;color:#1a3c6e;margin-top:5px">${contactParts.join(' &nbsp;|&nbsp; ')}</div>`:''}
     </div>`:'';
 
 
@@ -1248,16 +1248,16 @@ function exportPDF(){
     @page{margin:15mm 13mm;size:A4}
     body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:11px;color:#1a1a1a;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     /* ── Header ── */
-    .hdr{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:14px;border-bottom:3px solid #2c5f2e;margin-bottom:20px}
-    .hdr-title{font-size:26px;font-weight:700;color:#2c5f2e;letter-spacing:-.5px;line-height:1}
+    .hdr{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:14px;border-bottom:3px solid #1a3c6e;margin-bottom:20px}
+    .hdr-title{font-size:26px;font-weight:700;color:#1a3c6e;letter-spacing:-.5px;line-height:1}
     .hdr-client{font-size:13px;color:#444;margin-top:5px;font-weight:500}
     .hdr-meta{text-align:right;line-height:1.9;font-size:11px;color:#555}
     .hdr-meta strong{color:#1a1a1a;font-weight:600}
     /* ── SKU block ── */
     .sku-block{border:1px solid #e0e0e0;border-radius:8px;margin-bottom:18px;page-break-inside:avoid;overflow:hidden}
-    .sku-hdr{background:#2c5f2e;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+    .sku-hdr{background:#1a3c6e;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
     .sku-left{display:flex;align-items:center;gap:10px}
-    .sku-badge{background:#fff;color:#2c5f2e;font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;letter-spacing:.04em}
+    .sku-badge{background:#fff;color:#1a3c6e;font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;letter-spacing:.04em}
     .sku-type{color:#fff;font-size:12px;font-weight:600}
     .sku-name{color:rgba(255,255,255,.75);font-size:11px}
     .sku-price{text-align:right}
@@ -1267,7 +1267,7 @@ function exportPDF(){
     .sku-body{padding:12px 14px 10px}
     .sec{margin-bottom:12px}
     .sec:last-child{margin-bottom:0}
-    .sec-hd{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#2c5f2e;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #e8f5e9}
+    .sec-hd{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#1a3c6e;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #e8f0fb}
     /* ── Grid table ── */
     .gtbl{width:100%;border-collapse:collapse}
     .gtbl td{vertical-align:top;padding:5px 8px;border:1px solid #efefef;background:#fff;width:25%}
@@ -1362,7 +1362,8 @@ function saveCoDetails(){
 function loadCoDetails(){
   ['coName','coTagline','coAddr1','coAddr2','coWeb','coEmail','coPhone'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el)try{const v=localStorage.getItem('co_'+id);if(v)el.value=v;}catch(e){}
+    if(!el)return;
+    try{const v=localStorage.getItem('co_'+id);if(v!==null)el.value=v;}catch(e){}
   });
 }
 initRates();buildPaperMatrix();buildPBMPaperMatrix();buildFBPaperMatrix();loadCoDetails();
