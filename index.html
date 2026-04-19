@@ -150,7 +150,7 @@
         <div class="section-label">Client Details</div>
         <div class="g3" style="max-width:72%">
           <div class="field"><label>Client Name</label><input type="text" id="clientName" placeholder="Acme Packaging Co." class="tc-field"></div>
-          <div class="field"><label>Quote Ref</label><input type="text" id="quoteRef" placeholder="Q-2026-001" class="tc-field"></div>
+          <div class="field"><label>Quote Ref</label><input type="text" id="quoteRef" placeholder="Q-2026-001"></div>
           <div class="field"><label>Date</label><input type="date" id="quoteDate"></div>
         </div>
         <div style="margin-top:12px;max-width:170px">
@@ -297,6 +297,23 @@
 
       </div>
       <button class="btn btn-accent" onclick="applyAdmin()">Apply & Recalculate</button>
+
+      <div class="card" style="margin-top:14px">
+        <div class="section-label">Company Details (shown on PDF quotes)</div>
+        <div class="g2" style="margin-bottom:10px">
+          <div class="field"><label>Company Name</label><input type="text" id="coName" placeholder="Aaray Packaging Private Limited"></div>
+          <div class="field"><label>Tagline / Unit</label><input type="text" id="coTagline" placeholder="Unit I: A7/64, GT Road Industrial Area, Ghaziabad"></div>
+        </div>
+        <div class="g2" style="margin-bottom:10px">
+          <div class="field"><label>Address Line 1</label><input type="text" id="coAddr1" placeholder="Unit I: A7/64 & A7/65, South Side GT Road, Ghaziabad"></div>
+          <div class="field"><label>Address Line 2</label><input type="text" id="coAddr2" placeholder="Unit II: 27MI & 28MI, South Side GT Road, Ghaziabad"></div>
+        </div>
+        <div class="g3">
+          <div class="field"><label>Website</label><input type="text" id="coWeb" placeholder="www.yourcompany.in"></div>
+          <div class="field"><label>Email</label><input type="text" id="coEmail" placeholder="orders@yourcompany.in"></div>
+          <div class="field"><label>Phone</label><input type="text" id="coPhone" placeholder="+91 9311802540"></div>
+        </div>
+      </div>
 
       <div class="card" style="margin-top:14px">
         <div class="section-label">Google Sheets Integration</div>
@@ -971,7 +988,7 @@ function changeSKUType(id,type){
 
 function addSKU(){
   const id=++skuId;
-  const s={id,skuType:'Paper Bags (Automatic)',itemDesc:'',paperType:PAPER_TYPES[0],uom:'mm',bagW:'',bagG:'',bagH:'',gsm:'',printing:'No',delivery:'NCR',qty:'',handle:false,
+  const s={id,skuType:'Paper Bags (Automatic)',itemDesc:'',paperType:PAPER_TYPES[0],uom:'mm',bagW:'',bagG:'',bagH:'',gsm:'',printing:'No',delivery:'NCR',qty:'',handle:'Yes',
     lamination:'No',varnish:'No',pasting:'No',dieCutting:'Yes',pcsPerSheet:1,paperPrice:'',pbmPaperType:PBM_PAPER_TYPES[0],pbmGsm:String(PBM_GSM_COLS[0]),
     boxW:'',boxL:'',window:'No',foil:'No',uv:'No',embossing:'No',grainDirection:'Not Applicable',topFold:'Required'};
   skus.push(s);
@@ -1099,18 +1116,46 @@ function exportPDF(){
   const rawDate=document.getElementById('quoteDate').value||'';
   const date=rawDate?new Date(rawDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
 
+  /* Company details */
+  const coName=(document.getElementById('coName')||{}).value||'';
+  const coTagline=(document.getElementById('coTagline')||{}).value||'';
+  const coAddr1=(document.getElementById('coAddr1')||{}).value||'';
+  const coAddr2=(document.getElementById('coAddr2')||{}).value||'';
+  const coWeb=(document.getElementById('coWeb')||{}).value||'';
+  const coEmail=(document.getElementById('coEmail')||{}).value||'';
+  const coPhone=(document.getElementById('coPhone')||{}).value||'';
+
+  /* Letterhead HTML — only shown if company name is set */
+  const contactParts=[coWeb,coEmail,coPhone].filter(Boolean);
+  const letterhead=coName?`
+    <div style="text-align:center;padding:14px 20px 12px;border:2px solid #2c5f2e;border-radius:6px;margin-bottom:18px">
+      <div style="font-size:20px;font-weight:700;color:#2c5f2e;letter-spacing:.5px;text-transform:uppercase">${coName}</div>
+      ${coTagline?`<div style="font-size:10px;color:#555;margin-top:3px">${coTagline}</div>`:''}
+      ${coAddr1?`<div style="font-size:10px;color:#555;margin-top:2px">${coAddr1}</div>`:''}
+      ${coAddr2?`<div style="font-size:10px;color:#555;margin-top:1px">${coAddr2}</div>`:''}
+      ${contactParts.length?`<div style="font-size:10px;color:#2c5f2e;margin-top:5px">${contactParts.join(' &nbsp;|&nbsp; ')}</div>`:''}
+    </div>`:'';
+
+
   /* Build a cell: only emit if value is truthy */
   function cell(label,value){
     if(value===''||value===null||value===undefined||value===false)return null;
     return{label,value:String(value)};
   }
 
-  /* Render cells as a responsive grid table */
+  /* Render cells as a 4-column grid table, each row has exactly 4 cells */
   function gridTable(cells){
     const filled=cells.filter(Boolean);
     if(!filled.length)return'';
-    const tds=filled.map(c=>`<td><span class="cl">${c.label}</span><span class="cv">${c.value}</span></td>`).join('');
-    return`<table class="gtbl"><tbody><tr>${tds}</tr></tbody></table>`;
+    let rows='';
+    for(let i=0;i<filled.length;i+=4){
+      const chunk=filled.slice(i,i+4);
+      // Pad to 4 cells with empty ones
+      while(chunk.length<4)chunk.push({label:'',value:''});
+      const tds=chunk.map((c,j)=>`<td style="padding:5px 8px;border:1px solid #efefef;width:25%;${j%2===1?'background:#f9f9f9':''}">${c.label||c.value?`<span style="display:block;font-size:9px;color:#888;font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">${c.label}</span><span style="font-size:11.5px;font-weight:600;color:#1a1a1a">${c.value}</span>`:''}</td>`).join('');
+      rows+=`<tr>${tds}</tr>`;
+    }
+    return`<table style="width:100%;border-collapse:collapse;margin-bottom:4px"><tbody>${rows}</tbody></table>`;
   }
 
   /* Section with heading */
@@ -1138,7 +1183,7 @@ function exportPDF(){
       body=sec('Specifications',[
         cell('Paper Type',s.paperType),cell('GSM',s.gsm),
         cell('Bag W ('+u+')',s.bagW),cell('Bag G ('+u+')',s.bagG),cell('Bag H ('+u+')',s.bagH),
-        cell('Printing',s.printing),cell('Handle',s.handle?'Yes':'No'),
+        cell('Printing',s.printing),cell('Handle',s.handle&&s.handle!=='No'?'Yes':'No'),
         cell('Delivery',s.delivery),cell('Quantity',qty)
       ]);
     } else if(s.skuType==='Wrapping Paper'){
@@ -1235,6 +1280,7 @@ function exportPDF(){
   `;
 
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Quote — ${ref}</title><style>${css}</style></head><body>
+  ${letterhead}
   <div class="hdr">
     <div>
       <div class="hdr-title">Cost Quote</div>
