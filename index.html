@@ -507,7 +507,7 @@ function calcPaperBagManual(s){
   const uvCost=s.uv&&s.uv!=='No'?getRate('pbmUVRate'):0;
   const embossingCost=s.embossing==='Yes'?getRate('pbmEmbossingRate'):0;
   const fixedCost=getRate('pbmFixedCost');
-  const handleCost=s.handle==='Yes'?getRate('pbmHandleCost'):0;
+  const handleCost=(s.handle==='Yes'||s.handle===true)?getRate('pbmHandleCost'):0;
   const packingCost=getRate('pbmPackingCost');
   const transCost=getRate('pbmTransport')*bagWt/1000;
   const sub=paperCost+printCost+plateCost+laminCost+varnishCost+dieCutCost+wastageCost+foilCost+uvCost+embossingCost+fixedCost+handleCost+packingCost+transCost;
