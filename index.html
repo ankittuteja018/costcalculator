@@ -1061,6 +1061,9 @@ function saveQuote(){
   const quote={id:Date.now(),clientName:document.getElementById('clientName').value||'—',quoteRef:document.getElementById('quoteRef').value||'—',date:document.getElementById('quoteDate').value||new Date().toISOString().split('T')[0],margin,
     skus:skus.map(s=>{let calc={};if(s.skuType==='Paper Bags (Automatic)'&&pbValid(s))calc=calcPaperBag(s);else if(s.skuType==='Wrapping Paper'&&wpValid(s))calc=calcWrappingPaper(s);else if(s.skuType==='Paper Bag Manual'&&pbmValid(s))calc=calcPaperBagManual(s);else if(s.skuType==='Folding Box'&&fbValid(s))calc=calcFoldingBox(s);return{...s,calc};})};
   savedQuotes.push(quote);renderSaved();showPanel('saved');
+  /* Auto-generate next quote ref for the next quote */
+  const refEl=document.getElementById('quoteRef');
+  if(refEl)refEl.value=generateQuoteRef();
 }
 
 function renderSaved(){
@@ -1378,6 +1381,22 @@ function loadCoDetails(){
   });
 }
 initRates();buildPaperMatrix();buildPBMPaperMatrix();buildFBPaperMatrix();loadCoDetails();
+
+function generateQuoteRef(){
+  const year=new Date().getFullYear();
+  const key='quoteRefCounter_'+year;
+  let count=1;
+  try{const stored=localStorage.getItem(key);if(stored)count=parseInt(stored)+1;}catch(e){}
+  try{localStorage.setItem(key,count);}catch(e){}
+  return'Q-'+year+'-'+String(count).padStart(3,'0');
+}
+
+(function initQuoteRef(){
+  const el=document.getElementById('quoteRef');
+  if(el&&!el.value.trim())el.value=generateQuoteRef();
+  const dateEl=document.getElementById('quoteDate');
+  if(dateEl&&!dateEl.value)dateEl.value=new Date().toISOString().split('T')[0];
+})();
 document.getElementById('quoteDate').value=new Date().toISOString().split('T')[0];
 document.querySelectorAll('.tc-field').forEach(applyTitleCase);
 addSKU();
