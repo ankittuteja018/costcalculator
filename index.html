@@ -481,13 +481,16 @@ function calcPaperBagManual(s){
     const uw=Math.floor(c.sw/dimW)||0;
     const ul=Math.floor(c.sl/dimL)||0;
     const tot=uw*ul;
-    if(tot>bestUps.totalUps) bestUps={totalUps:tot,upsW:uw,upsL:ul,wOnW:c.wOnW};
+    if(tot>bestUps.totalUps) bestUps={totalUps:tot,upsW:uw,upsL:ul,wOnW:c.wOnW,dimW,dimL};
   });
   const totalUps=bestUps.totalUps||1;
   const upsW=bestUps.upsW||0,upsL=bestUps.upsL||0;
   const upsOrientation=(bestUps.wOnW?'W×L':'L×W');
+  /* pieceWIn/pieceLIn = per-piece dims in the winning orientation (may be swapped vs swIn/slIn) */
+  const pieceWIn=bestUps.dimW||swIn;
+  const pieceLIn=bestUps.dimL||slIn;
   const pcsPerSheet=totalUps;
-  const bagWt=swIn*slIn*gsm/1550/pcsPerSheet;
+  const bagWt=swIn*slIn*gsm/1550;
   const cG=closestPBMGSM(gsm);
   const paperPrice=parseFloat(s.paperPrice)||(pbmPaperRates[s.paperType]?pbmPaperRates[s.paperType][cG]||0:0);
   const paperCost=paperPrice*bagWt/1000;
@@ -498,8 +501,9 @@ function calcPaperBagManual(s){
   if(s.lamination==='Gloss Lamination')laminRate=getRate('glossLaminRate');
   else if(s.lamination==='Matt Lamination')laminRate=getRate('mattLaminRate');
   else if(s.lamination==='Thermal Lamination')laminRate=getRate('thermalLaminRate');
-  const laminCost=laminRate>0&&pcsPerSheet>0?swIn*slIn/(laminRate*pcsPerSheet*100):0;
-  const varnishCost=s.varnish==='Yes'&&pcsPerSheet>0?swIn*slIn/(getRate('varnishRate')*pcsPerSheet*100):0;
+  const fullSheetArea=swIn*upsW*slIn*upsL;
+  const laminCost=laminRate>0&&pcsPerSheet>0?fullSheetArea/(laminRate*pcsPerSheet*100):0;
+  const varnishCost=s.varnish==='Yes'&&pcsPerSheet>0?fullSheetArea/(getRate('varnishRate')*pcsPerSheet*100):0;
   const dieCutCost=s.dieCutting==='Yes'?getRate('dieCutRate')/pcsPerSheet:0;
   const wastageCost=(paperCost+printCost+plateCost+laminCost+varnishCost+dieCutCost)*getRate('pbmWastage')/100;
   const pastingCost=s.pasting==='Yes'?getRate('pastingRate'):0;
@@ -512,7 +516,7 @@ function calcPaperBagManual(s){
   const transCost=getRate('pbmTransport')*bagWt/1000;
   const sub=paperCost+printCost+plateCost+laminCost+varnishCost+dieCutCost+wastageCost+foilCost+uvCost+embossingCost+fixedCost+handleCost+packingCost+transCost;
   const mAmt=sub*margin/100;
-  return{swIn,slIn,bagWt,cG,gsm,totalUps,upsW,upsL,upsOrientation,topFoldExtra,
+  return{swIn,slIn,pieceWIn,pieceLIn,bagWt,cG,gsm,totalUps,upsW,upsL,upsOrientation,topFoldExtra,
     paperCost,printCost,plateCost,laminCost,varnishCost,dieCutCost,wastageCost,foilCost,uvCost,embossingCost,fixedCost,handleCost,packingCost,transCost,marginAmt:mAmt,sellingPrice:sub+mAmt};
 }
 
@@ -576,6 +580,8 @@ function calcFoldingBox(s){
     orientation=best.isGrain?grainOrientation:(best.wOnW?'W×L':'L×W');
   }
   const pcsPerSheet=totalUps||1;
+  const pieceWIn=upsW>0?sheetWIn/upsW:sheetWIn;
+  const pieceLIn=upsL>0?sheetLIn/upsL:sheetLIn;
 
   /* Bag weight per pc */
   const cG=closestFBGSM(gsm);
@@ -632,7 +638,7 @@ function calcFoldingBox(s){
 
   const sub=paperCost+printCost+plateCost+laminCost+varnishCost+dieCutCost+wastageCost+pastingCost+foilCost+uvCost+embossingCost+fixedCost+packingCost+transCost;
   const mAmt=sub*margin/100;
-  return{sheetWIn,sheetLIn,upsW,upsL,totalUps,pcsPerSheet,bagWt,cG,gsm,orientation,
+  return{sheetWIn,sheetLIn,pieceWIn,pieceLIn,upsW,upsL,totalUps,pcsPerSheet,bagWt,cG,gsm,orientation,
     paperCost,printCost,plateCost,laminCost,varnishCost,dieCutCost,wastageCost,pastingCost,foilCost,uvCost,embossingCost,fixedCost,packingCost,transCost,
     marginAmt:mAmt,sellingPrice:sub+mAmt};
 }
@@ -713,8 +719,8 @@ function renderPaperBagManual(s,el){
     return;
   }
   const r=calcPaperBagManual(s),fmt=v=>'₹'+v.toFixed(2);
-  const swEl=el.querySelector('.sw-in-val');if(swEl)swEl.value=r.swIn.toFixed(3)+' inch';
-  const slEl=el.querySelector('.sl-in-val');if(slEl)slEl.value=r.slIn.toFixed(3)+(r.topFoldExtra?' (+1" top fold)':'')+' inch';
+  const swEl=el.querySelector('.sw-in-val');if(swEl)swEl.value=r.pieceWIn.toFixed(3)+' inch';
+  const slEl=el.querySelector('.sl-in-val');if(slEl)slEl.value=r.pieceLIn.toFixed(3)+(r.topFoldExtra?' (+1" top fold)':'')+' inch';
   const puEl=el.querySelector('.pbm-ups-val');if(puEl)puEl.value=r.upsW+' × '+r.upsL+' ('+r.upsOrientation+')';
   const ptEl=el.querySelector('.pbm-total-ups-val');if(ptEl)ptEl.value=r.totalUps;
   const bwEl=el.querySelector('.bw-val');if(bwEl)bwEl.value=r.bagWt.toFixed(4)+' gms';
@@ -886,8 +892,8 @@ function renderFoldingBox(s,el){
     return;
   }
   const r=calcFoldingBox(s),fmt=v=>'₹'+v.toFixed(2);
-  el.querySelector('.fb-sw-val').value=r.sheetWIn.toFixed(3)+' inch';
-  el.querySelector('.fb-sl-val').value=r.sheetLIn.toFixed(3)+' inch';
+  el.querySelector('.fb-sw-val').value=r.pieceWIn.toFixed(3)+' inch';
+  el.querySelector('.fb-sl-val').value=r.pieceLIn.toFixed(3)+' inch';
   el.querySelector('.fb-ups-val').value=r.upsW+' × '+r.upsL+' ('+r.orientation+')';
   el.querySelector('.fb-total-ups-val').value=r.totalUps;
   el.querySelector('.bw-val').value=r.bagWt.toFixed(4)+' gms';
