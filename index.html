@@ -470,41 +470,59 @@ function calcPaperBagManual(s){
   const slIn=H+(G/2)+1+topFoldExtra;
   /* Auto # of ups — same logic as Folding Box (max 29.5×39.75, try all 4 combos) */
   const maxW=29.5,maxL=39.75;
+
+  /* First check if blank needs splitting (Sheet W or Sheet L exceeds max sheet).
+     For PBM, blank can be split into N vertical sections: effectiveW=swIn/N, effectiveL=slIn*N.
+     Find minimum N such that effectiveW<=maxW and effectiveL<=maxL. */
+  let splits=1;
+  for(let n=1;n<=8;n++){
+    if(swIn/n<=maxW&&slIn*n<=maxL){splits=n;break;}
+    if(slIn/n<=maxW&&swIn*n<=maxL){splits=-n;break;} // negative = split along L axis
+  }
+  /* Effective sheet dims after splitting */
+  let effW,effL;
+  if(splits>0){effW=swIn/splits;effL=slIn*splits;}
+  else{effW=slIn/(-splits);effL=swIn*(-splits);}
+
   const combos=[
     {sw:maxW,sl:maxL,wOnW:true},{sw:maxW,sl:maxL,wOnW:false},
     {sw:maxL,sl:maxW,wOnW:true},{sw:maxL,sl:maxW,wOnW:false},
   ];
   let bestUps={totalUps:0};
+  /* Try ups using effective dims */
   combos.forEach(c=>{
-    const dimW=c.wOnW?swIn:slIn;
-    const dimL=c.wOnW?slIn:swIn;
+    const dimW=c.wOnW?effW:effL;
+    const dimL=c.wOnW?effL:effW;
     const uw=Math.floor(c.sw/dimW)||0;
     const ul=Math.floor(c.sl/dimL)||0;
     const tot=uw*ul;
     if(tot>bestUps.totalUps) bestUps={totalUps:tot,upsW:uw,upsL:ul,wOnW:c.wOnW,dimW,dimL};
   });
-  const totalUps=bestUps.totalUps||1;
-  const upsW=bestUps.upsW||0,upsL=bestUps.upsL||0;
-  const upsOrientation=(bestUps.wOnW?'W×L':'L×W');
-  /* pieceWIn/pieceLIn = per-piece dims in the winning orientation (may be swapped vs swIn/slIn) */
-  const pieceWIn=bestUps.dimW||swIn;
-  const pieceLIn=bestUps.dimL||slIn;
+  /* If blank still too large, fall back to 1 up */
+  const totalUps=bestUps.totalUps>0?bestUps.totalUps:1;
+  const upsW=bestUps.totalUps>0?(bestUps.upsW||1):1;
+  const upsL=bestUps.totalUps>0?(bestUps.upsL||1):1;
+  const upsOrientation=bestUps.totalUps>0?(bestUps.wOnW?'W×L':'L×W'):'1×1';
+  /* pieceWIn/pieceLIn = per-piece dims in the winning orientation */
+  const pieceWIn=bestUps.totalUps>0?(bestUps.dimW||effW):effW;
+  const pieceLIn=bestUps.totalUps>0?(bestUps.dimL||effL):effL;
   const pcsPerSheet=totalUps;
-  const bagWt=swIn*slIn*gsm/1550;
+  const bagWt=pieceWIn*pieceLIn*gsm/1550;
   const cG=closestPBMGSM(gsm);
   const paperPrice=parseFloat(s.paperPrice)||(pbmPaperRates[s.paperType]?pbmPaperRates[s.paperType][cG]||0:0);
   const paperCost=paperPrice*bagWt/1000;
   const printColors=s.printing==='No'?0:parseInt(s.printing)||0;
-  const printCost=printColors>0?1/pcsPerSheet:0;
   const plateCost=printColors>0?printColors*getRate('pbmPlateRate')/qty:0;
   let laminRate=0;
   if(s.lamination==='Gloss Lamination')laminRate=getRate('glossLaminRate');
   else if(s.lamination==='Matt Lamination')laminRate=getRate('mattLaminRate');
   else if(s.lamination==='Thermal Lamination')laminRate=getRate('thermalLaminRate');
-  const fullSheetArea=swIn*upsW*slIn*upsL;
+  const absSplits=Math.abs(splits);
+  const fullSheetArea=pieceWIn*upsW*pieceLIn*upsL;
   const laminCost=laminRate>0&&pcsPerSheet>0?fullSheetArea/(laminRate*pcsPerSheet*100):0;
   const varnishCost=s.varnish==='Yes'&&pcsPerSheet>0?fullSheetArea/(getRate('varnishRate')*pcsPerSheet*100):0;
   const dieCutCost=s.dieCutting==='Yes'?getRate('dieCutRate')/pcsPerSheet:0;
+  const printCost=printColors>0?1/pcsPerSheet:0;
   const wastageCost=(paperCost+printCost+plateCost+laminCost+varnishCost+dieCutCost)*getRate('pbmWastage')/100;
   const pastingCost=s.pasting==='Yes'?getRate('pastingRate'):0;
   const foilCost=s.foil&&s.foil!=='No'?getRate('pbmFoilRate'):0;
@@ -516,7 +534,7 @@ function calcPaperBagManual(s){
   const transCost=getRate('pbmTransport')*bagWt/1000;
   const sub=paperCost+printCost+plateCost+laminCost+varnishCost+dieCutCost+wastageCost+foilCost+uvCost+embossingCost+fixedCost+handleCost+packingCost+transCost;
   const mAmt=sub*margin/100;
-  return{swIn,slIn,pieceWIn,pieceLIn,bagWt,cG,gsm,totalUps,upsW,upsL,upsOrientation,topFoldExtra,
+  return{swIn,slIn,pieceWIn,pieceLIn,splits:Math.abs(splits),bagWt,cG,gsm,totalUps,upsW,upsL,upsOrientation,topFoldExtra,
     paperCost,printCost,plateCost,laminCost,varnishCost,dieCutCost,wastageCost,foilCost,uvCost,embossingCost,fixedCost,handleCost,packingCost,transCost,marginAmt:mAmt,sellingPrice:sub+mAmt};
 }
 
@@ -579,7 +597,8 @@ function calcFoldingBox(s){
     sheetWIn=best.sheetWIn;sheetLIn=best.sheetLIn;
     orientation=best.isGrain?grainOrientation:(best.wOnW?'W×L':'L×W');
   }
-  const pcsPerSheet=totalUps||1;
+  const pcsPerSheet=totalUps>0?totalUps:1;
+  if(totalUps===0){upsW=1;upsL=1;sheetWIn=boxWIn;sheetLIn=boxLIn;orientation='1×1';}
   const pieceWIn=upsW>0?sheetWIn/upsW:sheetWIn;
   const pieceLIn=upsL>0?sheetLIn/upsL:sheetLIn;
 
@@ -719,7 +738,7 @@ function renderPaperBagManual(s,el){
     return;
   }
   const r=calcPaperBagManual(s),fmt=v=>'₹'+v.toFixed(2);
-  const swEl=el.querySelector('.sw-in-val');if(swEl)swEl.value=r.pieceWIn.toFixed(3)+' inch';
+  const swEl=el.querySelector('.sw-in-val');if(swEl)swEl.value=r.pieceWIn.toFixed(3)+(r.splits>1?' ('+r.splits+' splits)':'')+' inch';
   const slEl=el.querySelector('.sl-in-val');if(slEl)slEl.value=r.pieceLIn.toFixed(3)+(r.topFoldExtra?' (+1" top fold)':'')+' inch';
   const puEl=el.querySelector('.pbm-ups-val');if(puEl)puEl.value=r.upsW+' × '+r.upsL+' ('+r.upsOrientation+')';
   const ptEl=el.querySelector('.pbm-total-ups-val');if(ptEl)ptEl.value=r.totalUps;
@@ -1010,7 +1029,7 @@ function bindSKUFields(s){
   const el=document.getElementById('sku-'+s.id);
   el.querySelectorAll('[data-field]').forEach(inp=>{
     if(inp.tagName==='SELECT'&&inp.dataset.field==='uom')return;
-    const ev=inp.type==='checkbox'?'change':'input';
+    const ev=inp.type==='checkbox'?'change':inp.tagName==='SELECT'?'change':'input';
     inp.addEventListener(ev,()=>{s[inp.dataset.field]=inp.type==='checkbox'?inp.checked:inp.value;renderSKUCard(s);});
     if(inp.type==='text')applyTitleCase(inp);
   });
